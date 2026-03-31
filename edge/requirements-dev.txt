@@ -1,0 +1,9 @@
+# ClimaScope – Edge Layer Dependencies (Development / Simulation)
+# Install on Windows/Mac/Linux(non-Pi) with:
+#   pip install -r requirements-dev.txt
+
+# ── Networking ────────────────────────────────────────────────────────────────
+requests==2.31.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1   # load .env files for local dev

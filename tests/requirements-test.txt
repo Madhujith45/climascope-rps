@@ -1,0 +1,9 @@
+# ClimaScope – Test / Simulation Dependencies
+# Install with:
+#   pip install -r tests/requirements-test.txt
+
+# HTTP client used by simulate_edge.py
+requests>=2.31.0
+
+# Required only when replaying the sample xlsx file (--xlsx flag)
+openpyxl>=3.1.0

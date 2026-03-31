@@ -1,0 +1,15 @@
+# ClimaScope – Edge Layer Dependencies (Raspberry Pi Hardware)
+# Install on Raspberry Pi OS (Bookworm / Bullseye) with:
+#   pip install -r requirements-pi.txt
+
+# Include common development dependencies
+-r requirements-dev.txt
+
+# ── Sensor hardware drivers ───────────────────────────────────────────────────
+# RPi.GPIO / I2C interfaces must be enabled in raspi-config
+Adafruit-DHT==1.4.0
+adafruit-circuitpython-bmp280==3.3.6
+adafruit-circuitpython-ads1x15==2.3.4
+
+# adafruit-blinka provides board/busio abstractions for CircuitPython on Pi
+adafruit-blinka==8.43.0

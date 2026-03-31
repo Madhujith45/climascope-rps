@@ -1,0 +1,1 @@
+# ClimaScope Auth Package
