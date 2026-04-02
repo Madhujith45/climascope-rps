@@ -42,11 +42,11 @@ pip install -r requirements.txt
 Create `.env` file in `backend/` directory:
 ```bash
 # Database Configuration
-MONGODB_URL=mongodb://localhost:27017
+MONGO_URI=mongodb://localhost:27017
 DATABASE_NAME=climascope
 
 # JWT Configuration
-JWT_SECRET_KEY=your_super_secret_key_change_in_production
+JWT_SECRET=your_super_secret_key_change_in_production
 
 # CORS Configuration
 CLIMASCOPE_CORS_ORIGINS=http://localhost:5173
@@ -63,7 +63,7 @@ mongod --dbpath /path/to/your/db
 1. Create free account at [MongoDB Atlas](https://www.mongodb.com/atlas)
 2. Create new cluster
 3. Get connection string
-4. Update `MONGODB_URL` in `.env`
+4. Update `MONGO_URI` in `.env`
 
 #### 1.4 Train AI Models
 ```bash
@@ -329,9 +329,9 @@ npm run build
 ### Environment Variables (Production)
 ```bash
 # Backend
-MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/dbname
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/dbname
 DATABASE_NAME=climascope_prod
-JWT_SECRET_KEY=super_secure_production_key
+JWT_SECRET=super_secure_production_key
 CLIMASCOPE_CORS_ORIGINS=https://yourdomain.com
 
 # Frontend
