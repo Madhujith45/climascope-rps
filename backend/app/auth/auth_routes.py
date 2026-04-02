@@ -29,6 +29,7 @@ class UserSignup(BaseModel):
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., min_length=8, description="Password (min 8 characters)")
     full_name: Optional[str] = Field(None, description="User full name")
+    phone: Optional[str] = Field(None, description="Optional phone number for SMS alerts")
 
 class UserLogin(BaseModel):
     email: EmailStr = Field(..., description="User email address")
@@ -128,35 +129,42 @@ async def signup(user_data: UserSignup):
         user_create = UserCreate(
             email=user_data.email,
             password=user_data.password,
-            full_name=user_data.full_name
+            full_name=user_data.full_name,
+            phone=user_data.phone if hasattr(user_data, "phone") else None,
+            alert_mode=user_data.alert_mode if hasattr(user_data, "alert_mode") else "email",
+            alerts_enabled=user_data.alerts_enabled if hasattr(user_data, "alerts_enabled") else True
         )
-        
+
         # Hash password
         hashed_password = hash_password(user_data.password)
-        
+
         # Prepare user document
         user_doc = {
             "email": user_create.email,
             "password": hashed_password,
             "full_name": user_create.full_name,
+            "phone": user_create.phone,
+            "alert_mode": user_create.alert_mode,
+            "alerts_enabled": user_create.alerts_enabled,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "is_active": True,
             "role": "user"
         }
-        
+
         # Insert into database
         result = await db.users.insert_one(user_doc)
-        
+
         # Return user response (without password)
         response_user = {
             "id": str(result.inserted_id),
             "email": user_create.email,
             "full_name": user_create.full_name,
+            "phone": user_create.phone,
+            "alert_mode": user_create.alert_mode,
+            "alerts_enabled": user_create.alerts_enabled,
             "created_at": user_doc["created_at"]
         }
-        
-        logger.info(f"New user registered: {user_create.email}")
         return response_user
         
     except HTTPException:
@@ -347,6 +355,9 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         "id": str(current_user["_id"]),
         "email": current_user["email"],
         "full_name": current_user.get("full_name"),
+        "phone": current_user.get("phone"),
+        "alert_mode": current_user.get("alert_mode", "email"),
+        "alerts_enabled": current_user.get("alerts_enabled", True),
         "created_at": current_user.get("created_at", datetime.utcnow())
     }
 
@@ -368,6 +379,35 @@ async def verify_user_token(current_user: dict = Depends(get_current_user)):
         "user": {
             "id": str(current_user["_id"]),
             "email": current_user["email"],
-            "full_name": current_user.get("full_name")
+            "full_name": current_user.get("full_name"),
+            "phone": current_user.get("phone"),
+            "alert_mode": current_user.get("alert_mode", "email"),
+            "alerts_enabled": current_user.get("alerts_enabled", True)
         }
     }
+
+from ..db.models.user import UserUpdate
+@router.put("/me/settings", response_model=dict)
+async def update_settings(update_data: UserUpdate, current_user: dict = Depends(get_current_user)):
+    db = get_mongo_db()
+    update_fields = {}
+    if update_data.phone is not None:
+        update_fields["phone"] = update_data.phone
+    if update_data.alert_mode is not None:
+        update_fields["alert_mode"] = update_data.alert_mode
+    if update_data.alerts_enabled is not None:
+        update_fields["alerts_enabled"] = update_data.alerts_enabled
+    if update_data.full_name is not None:
+        update_fields["full_name"] = update_data.full_name
+
+    if not update_fields:
+        return {"message": "No updates provided"}
+
+    update_fields["updated_at"] = datetime.utcnow()
+
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": update_fields}
+    )
+
+    return {"message": "Settings updated successfully"}

@@ -11,6 +11,9 @@ class UserBase(BaseModel):
     """Base user model with common fields"""
     email: EmailStr = Field(..., description="User email address")
     full_name: Optional[str] = Field(None, description="User full name")
+    phone: Optional[str] = Field(None, description="User phone number")
+    alert_mode: str = Field("email", description="Alert mode: email, sms, both")
+    alerts_enabled: bool = Field(True, description="Enable or disable alerts")
 
 class UserCreate(UserBase):
     """User model for registration"""
@@ -30,6 +33,9 @@ class UserResponse(BaseModel):
     id: str = Field(..., description="User ID")
     email: EmailStr = Field(..., description="User email address")
     full_name: Optional[str] = Field(None, description="User full name")
+    phone: Optional[str] = Field(None, description="User phone number")
+    alert_mode: str = Field("email", description="Alert mode: email, sms, both")
+    alerts_enabled: bool = Field(True, description="Enable or disable alerts")
     created_at: datetime = Field(..., description="Account creation timestamp")
 
 class UserLogin(BaseModel):
@@ -41,5 +47,6 @@ class UserUpdate(BaseModel):
     """User model for updates"""
     full_name: Optional[str] = Field(None, description="User full name")
     email: Optional[EmailStr] = Field(None, description="User email address")
-    current_password: Optional[str] = Field(None, description="Current password for verification")
-    new_password: Optional[str] = Field(None, min_length=8, description="New password (min 8 characters)")
+    phone: Optional[str] = Field(None, description="User phone number")
+    alert_mode: Optional[str] = Field(None, description="Alert mode: email, sms, both")
+    alerts_enabled: Optional[bool] = Field(None, description="Enable or disable alerts")

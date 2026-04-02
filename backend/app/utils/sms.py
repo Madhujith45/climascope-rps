@@ -1,38 +1,30 @@
-"""
-ClimaScope - SMS utilities (optional)
-Uses Twilio when credentials are configured.
-"""
-
-import logging
 import os
-import importlib
+from twilio.rest import Client
+import logging
 
 logger = logging.getLogger(__name__)
 
-
-def send_sms_alert(message: str, to_phone: str | None = None) -> bool:
-    """Send SMS alert via Twilio if configured, otherwise no-op in dev mode."""
-    account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
-    from_phone = os.getenv("TWILIO_FROM_PHONE", "")
-    target_phone = to_phone or os.getenv("TWILIO_TO_PHONE", "")
-
-    if not account_sid or not auth_token or not from_phone or not target_phone:
-        logger.info("Twilio not configured; skipping SMS alert")
-        return False
+def send_sms(to_number: str, message: str) -> None:
+    """Send an SMS alert using Twilio and environment variables."""
+    TWILIO_SID = os.getenv("TWILIO_SID")
+    TWILIO_AUTH = os.getenv("TWILIO_AUTH")
+    TWILIO_PHONE = os.getenv("TWILIO_PHONE")
+    
+    if not TWILIO_SID or not TWILIO_AUTH or not TWILIO_PHONE:
+        logger.warning(f"Would send SMS to {to_number} but Twilio credentials missing. msg: {message}")
+        return
+        
+    if not to_number:
+        logger.warning("Cannot send SMS: No destination phone number provided.")
+        return
 
     try:
-        twilio_rest = importlib.import_module("twilio.rest")
-        Client = getattr(twilio_rest, "Client")
-
-        client = Client(account_sid, auth_token)
-        client.messages.create(
+        client = Client(TWILIO_SID, TWILIO_AUTH)
+        msg = client.messages.create(
             body=message,
-            from_=from_phone,
-            to=target_phone,
+            from_=TWILIO_PHONE,
+            to=to_number
         )
-        logger.info("SMS alert sent to %s", target_phone)
-        return True
-    except Exception as exc:
-        logger.error("Failed to send SMS alert: %s", exc)
-        return False
+        logger.info(f"Alert SMS successfully sent to {to_number}. SID: {msg.sid}")
+    except Exception as e:
+        logger.error(f"Failed to send SMS to {to_number}: {str(e)}")

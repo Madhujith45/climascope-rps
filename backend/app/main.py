@@ -100,7 +100,9 @@ app.include_router(pr)
 # AI ChatBot routes
 from .routes.ai_chat_routes import router as ai_router
 app.include_router(ai_router)
-
+# Development Test Routes
+from .routes.test_routes import router as test_router
+app.include_router(test_router)
 # ── Root health-check ─────────────────────────────────────────────────────────
 @app.get("/", tags=["health"])
 async def health():
