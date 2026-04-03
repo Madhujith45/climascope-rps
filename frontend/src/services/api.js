@@ -39,7 +39,7 @@ api.interceptors.response.use(
   (err) => {
     const msg = err.response?.data?.detail || err.message || 'Unknown error'
     console.error('[ClimaScope API]', err.config?.url, '→', msg)
-    return Promise.reject(err)
+    if (err.response?.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; } return Promise.reject(err)
   }
 )
 
@@ -95,3 +95,4 @@ export async function getModelStatus() {
 }
 
 export default api
+

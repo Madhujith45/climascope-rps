@@ -18,8 +18,9 @@ import RiskTimeline    from './RiskTimeline'
 import AlertsSection   from './AlertsSection'
 import DevicePanel     from './DevicePanel'
 import InsightsPanel   from './InsightsPanel'
+import RiskGauge       from './RiskGauge'
 
-const REFRESH_MS   = 3_500
+const REFRESH_MS   = 10_000
 const CHART_POINTS = 60
 
 export default function Dashboard() {
@@ -126,13 +127,21 @@ export default function Dashboard() {
         <MetricGrid data={latestReading} chartData={chartData} loading={loading} alertMetric={alertMetric} />
       </div>
 
-      {/* ── Row: Status Block + Stability Score ─────────────── */}
-      <div className="mt-6 grid gap-5 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+      {/* ── Row: Status Block + Stability Score + Risk Gauge ─────────────── */}
+      <div className="mt-6 grid gap-5 lg:grid-cols-6">
+        <div className="lg:col-span-2">
           <StatusBlock prediction={prediction} loading={loading || !prediction} />
         </div>
         <div className="lg:col-span-2">
           <StabilityScore prediction={prediction} data={latestReading} loading={loading || !prediction} />
+        </div>
+        <div className="lg:col-span-2">
+          <RiskGauge 
+            score={latestReading?.risk_score} 
+            riskLevel={latestReading?.level} 
+            anomalyFlag={latestReading?.anomaly} 
+            riskReason={null} 
+          />
         </div>
       </div>
 
