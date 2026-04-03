@@ -14,7 +14,7 @@ ClimaScope is a research-level environmental monitoring system that runs **entir
 │                                  │
 │  ┌─────────────┐                 │
 │  │  Sensors    │  DHT22, BMP280, │
-│  │  (GPIO/I2C) │  MQ2+ADS1115   │
+│  │  (GPIO/I2C) │  MQ2+ADS1115    │
 │  └──────┬──────┘                 │
 │         │ raw readings           │
 │  ┌──────▼────────────────────┐   │
@@ -34,7 +34,7 @@ ClimaScope is a research-level environmental monitoring system that runs **entir
                          │ HTTP REST
         ┌────────────────▼────────────────┐
         │  React + Vite Frontend          │
-        │  (Vercel / localhost:5173)       │
+        │  (Vercel / localhost:5173)      │
         │  Auto-refresh every 10 seconds  │
         └─────────────────────────────────┘
 ```
