@@ -25,9 +25,11 @@ def main():
     engine = RiskEngine(window_size=10)
     backend_url = os.getenv("CLIMASCOPE_BACKEND_URL", "https://climascope-rps.onrender.com")
     api_endpoint = f"{backend_url}/api/data"
+    device_id = os.getenv("CLIMASCOPE_DEVICE_ID", "climascope-pi001")
 
     logger.info(f"Using backend: {backend_url}")
     logger.info(f"Sending telemetry to: {api_endpoint}")
+    logger.info(f"Device ID: {device_id}")
     print(f"Starting ClimaScope Edge. Sending data to {api_endpoint} every 3s")
 
     while True:
@@ -42,6 +44,8 @@ def main():
             payload = {
                 **sensor_data,
                 **risk_result
+                                ,
+                "device_id": device_id
             }
             
             print(f"Sending: {payload}")
