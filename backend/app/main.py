@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────
 _RAW_ORIGINS = os.environ.get(
     "CLIMASCOPE_CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173",
+    "*",
 )
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _RAW_ORIGINS.split(",") if o.strip()]
 # Allow all origins when a wildcard is explicitly set (e.g. for public deployments)
@@ -81,6 +81,11 @@ async def on_startup():
 async def on_shutdown():
     await close_mongo_db()
 
+
+@app.get("/health", tags=["health"])
+async def health():
+    return {"status": "ok"}
+
 # ── Routers ───────────────────────────────────────────────────────────
 # Core data routes (existing)
 app.include_router(dr)
@@ -103,7 +108,6 @@ app.include_router(ai_router)
 # Development Test Routes
 from .routes.test_routes import router as test_router
 app.include_router(test_router)
-# ── Root health-check ─────────────────────────────────────────────────────────
 @app.get("/", tags=["health"])
 async def health():
     return {

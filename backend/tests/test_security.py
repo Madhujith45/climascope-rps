@@ -87,6 +87,7 @@ class TestA_OTPPasswordReset:
         """Full flow: forgot -> read OTP from DB -> verify -> reset -> login."""
         from pymongo import MongoClient
         import hashlib
+        import os
 
         email = _unique_email()
         _signup(email, password="oldpass1234")
@@ -95,7 +96,9 @@ class TestA_OTPPasswordReset:
                           json={"email": email}, timeout=TIMEOUT)
         assert r.status_code == 200
 
-        mc = MongoClient("mongodb://localhost:27017")
+        mongo_uri = os.getenv("MONGO_URI")
+        assert mongo_uri is not None
+        mc = MongoClient(mongo_uri)
         db = mc["climascope"]
         otp_rec = db.otp_records.find_one({"email": email, "used": False})
         assert otp_rec is not None

@@ -14,12 +14,9 @@ from fastapi import HTTPException
 logger = logging.getLogger(__name__)
 
 # MongoDB Configuration
-# Prefer MONGO_URI and keep MONGODB_URL as legacy fallback.
-MONGODB_URL = (
-    os.getenv("MONGO_URI")
-    or os.getenv("MONGODB_URL")
-    or "mongodb://localhost:27017"
-)
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI is not set")
 DATABASE_NAME = os.getenv(
     "DATABASE_NAME", 
     "climascope"
@@ -62,12 +59,12 @@ async def init_db():
     
     try:
         # Create async MongoDB client
-        async_client = AsyncIOMotorClient(MONGODB_URL)
+        async_client = AsyncIOMotorClient(MONGO_URI)
         async_database = async_client[DATABASE_NAME]
         
         # Test connection
         await async_client.server_info()
-        logger.info(f"Connected to MongoDB: {MONGODB_URL}")
+        logger.info(f"Connected to MongoDB: {MONGO_URI}")
         logger.info(f"Using database: {DATABASE_NAME}")
         
         # Create indexes for better performance
@@ -85,12 +82,12 @@ def init_sync_db():
     
     try:
         # Create sync MongoDB client
-        sync_client = MongoClient(MONGODB_URL)
+        sync_client = MongoClient(MONGO_URI)
         sync_database = sync_client[DATABASE_NAME]
         
         # Test connection
         sync_client.server_info()
-        logger.info(f"Connected to MongoDB (sync): {MONGODB_URL}")
+        logger.info(f"Connected to MongoDB (sync): {MONGO_URI}")
         
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB (sync): {str(e)}")

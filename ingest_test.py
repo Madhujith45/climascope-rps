@@ -3,9 +3,14 @@ import motor.motor_asyncio
 import uuid
 from datetime import datetime
 import random
+import os
 
 async def ingest():
-    client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+    mongo_uri = os.getenv("MONGO_URI")
+    if not mongo_uri:
+        raise RuntimeError("MONGO_URI is not set")
+
+    client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
     db = client.climascope
     
     # Get all users

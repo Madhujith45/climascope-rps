@@ -51,50 +51,45 @@ async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(
     return None
 
 
-async def ensure_device_for_user(db, user_id: str):
+async def ensure_device_for_user(db, user_id: str | None, device_id: str):
     """
-    Auto-create or update 'climascope-pi001' device for user if it doesn't exist.
+    Auto-create or update a single device record for the current telemetry source.
     Returns device_id of the device.
     """
-    device_id = "climascope-pi001"
-    device_doc = await db.devices.find_one({
-        "user_id": user_id,
-        "device_id": device_id
-    })
-    
     now = datetime.datetime.utcnow()
-    
-    if device_doc:
-        # Update last_seen timestamp
+
+    device_filter = {"device_id": device_id, "user_id": user_id}
+    existing_device = await db.devices.find_one(device_filter)
+
+    if existing_device:
         await db.devices.update_one(
-            {"_id": device_doc["_id"]},
+            {"_id": existing_device["_id"]},
             {
                 "$set": {
                     "last_seen": now,
                     "updated_at": now,
                     "is_active": True,
-                    "status": "online"
+                    "status": "online",
+                    "device_name": existing_device.get("device_name") or device_id,
                 }
             }
         )
-        logger.debug(f"Updated device {device_id} for user {user_id}")
+        logger.debug("Updated device %s for user %s", device_id, user_id)
     else:
-        # Create new device
-        new_device = {
+        await db.devices.insert_one({
             "user_id": user_id,
             "device_id": device_id,
-            "device_name": "climascope-pi001",
+            "device_name": device_id,
             "location": "Default",
             "description": "Auto-created from first telemetry data",
             "status": "online",
             "is_active": True,
             "created_at": now,
             "updated_at": now,
-            "last_seen": now
-        }
-        result = await db.devices.insert_one(new_device)
-        logger.info(f"Auto-created device {device_id} for user {user_id}")
-    
+            "last_seen": now,
+        })
+        logger.info("Auto-created device %s for user %s", device_id, user_id)
+
     return device_id
 
 
@@ -109,10 +104,11 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
     owner_user_id = None
     device_id_to_use = data.device_id or "climascope-pi001"
     
-    # Priority 1: JWT-authenticated user (auto-create device)
+    # Priority 1: JWT-authenticated user (auto-create or update device)
     if current_user:
         owner_user_id = str(current_user.get("_id"))
-        device_id_to_use = await ensure_device_for_user(db, owner_user_id)
+        device_id_to_use = data.device_id or "climascope-pi001"
+        device_id_to_use = await ensure_device_for_user(db, owner_user_id, device_id_to_use)
     # Priority 2: Device ID + API key (existing device auth)
     elif data.device_id:
         device_doc = await db.devices.find_one({"device_id": data.device_id})
@@ -122,8 +118,14 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
                 if hash_api_key(data.api_key) != device_doc.get("api_key_hash"):
                     raise HTTPException(status_code=401, detail="Invalid device credentials")
     else:
-        # No auth provided - still accept data for sensors
+        # No auth provided - still accept data for sensors and create a default device record.
         logger.warning("Data received without authentication (device_id or JWT token)")
+        device_id_to_use = "climascope-pi001"
+        await ensure_device_for_user(db, None, device_id_to_use)
+
+    # If we have a device ID but no stored record yet, create/update it now.
+    if not current_user and data.device_id:
+        await ensure_device_for_user(db, owner_user_id, data.device_id)
 
     doc = data.dict()
     doc.pop("api_key", None)

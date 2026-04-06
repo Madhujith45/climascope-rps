@@ -42,7 +42,7 @@ pip install -r requirements.txt
 Create `.env` file in `backend/` directory:
 ```bash
 # Database Configuration
-MONGO_URI=mongodb://localhost:27017
+MONGO_URI=<your_mongo_uri>
 DATABASE_NAME=climascope
 
 # JWT Configuration
@@ -329,7 +329,7 @@ npm run build
 ### Environment Variables (Production)
 ```bash
 # Backend
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/dbname
+MONGO_URI=<your_mongo_uri>
 DATABASE_NAME=climascope_prod
 JWT_SECRET=super_secure_production_key
 CLIMASCOPE_CORS_ORIGINS=https://yourdomain.com
@@ -384,7 +384,7 @@ VITE_API_URL=https://api.yourdomain.com
 mongosh --eval "db.adminCommand('ismaster')"
 
 # Check environment variables
-python -c "import os; print(os.environ.get('MONGODB_URL'))"
+python -c "import os; print(os.environ.get('MONGO_URI'))"
 ```
 
 #### Frontend Can't Connect
