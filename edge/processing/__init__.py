@@ -2,6 +2,6 @@
 ClimaScope – Processing Package Init
 """
 
-from .risk_engine import process_reading, engine
+from .risk_engine import RiskEngine
 
-__all__ = ["process_reading", "engine"]
+__all__ = ["RiskEngine"]
