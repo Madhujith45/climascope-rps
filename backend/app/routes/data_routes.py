@@ -127,15 +127,29 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
     if not current_user and data.device_id:
         await ensure_device_for_user(db, owner_user_id, data.device_id)
 
-    doc = data.dict()
-    doc.pop("api_key", None)
-    doc["risk_score"] = score
-    doc["level"] = level or None
-    doc["anomaly"] = anomaly_detected
-    doc["device_id"] = device_id_to_use
-    doc["timestamp"] = data.timestamp or datetime.datetime.utcnow().isoformat()
+    raw_data = data.dict()
+    raw_data.pop("api_key", None)
 
-    await db.sensor_readings.insert_one(doc)
+    document = {
+        "device_id": raw_data.get("device_id") or device_id_to_use or "unknown_device",
+        "user_id": owner_user_id,
+        "timestamp": datetime.datetime.utcnow(),
+        "raw": {
+            "temperature": raw_data.get("temperature"),
+            "humidity": raw_data.get("humidity"),
+            "pressure": raw_data.get("pressure"),
+            "gas": raw_data.get("gas"),
+        },
+        "processed": {
+            "gas_ppm": raw_data.get("gas_ppm") or raw_data.get("gas"),
+            "risk_score": score,
+            "level": level or None,
+            "anomaly": anomaly_detected,
+            "prediction": raw_data.get("prediction"),
+        },
+    }
+
+    await db.sensor_readings.insert_one(document)
 
     if score > 65 or anomaly_detected or level == "HIGH":
         reason = []
@@ -167,8 +181,11 @@ async def get_latest(n: int = 1):
     docs = await cursor.to_list(length=n)
     for doc in docs:
         doc["_id"] = str(doc["_id"])
-        doc["gas_ppm"] = doc.get("gas", doc.get("gas_ppm", 0)) if doc.get("gas", 0) else doc.get("gas_ppm", 0)
-        doc["mq2_voltage"] = doc.get("gas", 0) / 100.0 if doc.get("gas", 0) else doc.get("mq2_voltage", 0)
+        raw = doc.get("raw", {})
+        processed = doc.get("processed", {})
+        gas_value = raw.get("gas", doc.get("gas", 0))
+        doc["gas_ppm"] = processed.get("gas_ppm", doc.get("gas_ppm", gas_value if gas_value else 0))
+        doc["mq2_voltage"] = (gas_value / 100.0) if gas_value else doc.get("mq2_voltage", 0)
     return docs
 
 @router.get("/history")
@@ -182,6 +199,9 @@ async def get_history(limit: int = 50, offset: int = 0, device_id: str | None = 
     docs = await cursor.to_list(length=limit)
     for doc in docs:
         doc["_id"] = str(doc["_id"])
-        doc["gas_ppm"] = doc.get("gas", doc.get("gas_ppm", 0)) if doc.get("gas", 0) else doc.get("gas_ppm", 0)
-        doc["mq2_voltage"] = doc.get("gas", 0) / 100.0 if doc.get("gas", 0) else doc.get("mq2_voltage", 0)
+        raw = doc.get("raw", {})
+        processed = doc.get("processed", {})
+        gas_value = raw.get("gas", doc.get("gas", 0))
+        doc["gas_ppm"] = processed.get("gas_ppm", doc.get("gas_ppm", gas_value if gas_value else 0))
+        doc["mq2_voltage"] = (gas_value / 100.0) if gas_value else doc.get("mq2_voltage", 0)
     return {"total": total, "records": docs}
