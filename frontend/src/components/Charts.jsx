@@ -67,12 +67,19 @@ function formatTime(ts) {
 }
 
 function buildDataset(records, def) {
+  const readValue = (record) => {
+    const raw = record?.raw || {}
+    const processed = record?.processed || {}
+    if (def.key === 'gas_ppm') return processed.gas_ppm ?? raw.gas ?? null
+    return raw[def.key] ?? null
+  }
+
   return {
     labels: records.map((r) => formatTime(r.timestamp)),
     datasets: [
       {
         label: `${def.label} (${def.unit})`,
-        data: records.map((r) => r[def.key] ?? null),
+        data: records.map((r) => readValue(r)),
         borderColor: def.color,
         backgroundColor: def.fill,
         borderWidth: 2,

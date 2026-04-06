@@ -23,7 +23,7 @@ function fmt(ts) {
 function generateForecast(sorted) {
   if (sorted.length < 6) return { labels: [], values: [] }
 
-  const recent = sorted.slice(-10).map((r) => Number(r.temperature)).filter((v) => !isNaN(v))
+  const recent = sorted.slice(-10).map((r) => Number(r?.raw?.temperature)).filter((v) => !isNaN(v))
   if (recent.length < 2) return { labels: [], values: [] }
 
   const n = recent.length
@@ -61,7 +61,7 @@ export default function TrendChart({ data, loading }) {
 
   const chartData = useMemo(() => {
     const realLabels = sorted.map((r) => fmt(r.timestamp))
-    const realValues = sorted.map((r) => r.temperature ?? null)
+    const realValues = sorted.map((r) => r?.raw?.temperature ?? null)
     const allLabels = [...realLabels, ...forecast.labels.slice(1)]
 
     const fLen = Math.max(0, forecast.labels.length - 1)

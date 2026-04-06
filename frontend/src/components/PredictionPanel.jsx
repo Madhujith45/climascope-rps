@@ -8,6 +8,10 @@
 import React, { useState, useEffect } from 'react'
 import { getPrediction, getModelStatus } from '../services/api'
 
+function getRaw(reading) {
+  return reading?.raw || {}
+}
+
 function AdvancedPredictionPanel({ sensorData }) {
   const [prediction, setPrediction] = useState(null)
   const [modelStatus, setModelStatus] = useState(null)
@@ -36,12 +40,13 @@ function AdvancedPredictionPanel({ sensorData }) {
       setError(null)
       
       try {
+        const raw = getRaw(sensorData)
         const reading = {
-          temperature: sensorData.temperature || 0,
-          humidity: sensorData.humidity || 50,
-          pressure: sensorData.pressure || 1013,
-          gas_voltage: sensorData.mq2_voltage || 1.5,
-          gas_ppm: sensorData.gas_ppm || 200
+          temperature: raw.temperature || 0,
+          humidity: raw.humidity || 50,
+          pressure: raw.pressure || 1013,
+          gas_voltage: raw.mq2_voltage || raw.gas_voltage || 1.5,
+          gas_ppm: sensorData?.processed?.gas_ppm ?? raw.gas ?? 200
         }
         
         const result = await getPrediction(reading)

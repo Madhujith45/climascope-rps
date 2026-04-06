@@ -20,6 +20,14 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const REFRESH_MS = 10_000;
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+function getRaw(reading) {
+  return reading?.raw || {};
+}
+
+function getProcessed(reading) {
+  return reading?.processed || {};
+}
+
 export default function Analytics() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +43,17 @@ export default function Analytics() {
         const data = await res.json();
         // Enforce timeline order so charts render left->right oldest to newest.
         const records = Array.isArray(data.records) ? data.records : [];
-        records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        setHistory(records);
+        const normalized = records.map((reading) => ({
+          ...reading,
+          temperature: getRaw(reading).temperature,
+          humidity: getRaw(reading).humidity,
+          pressure: getRaw(reading).pressure,
+          gas_ppm: getProcessed(reading).gas_ppm ?? getRaw(reading).gas,
+          risk_score: getProcessed(reading).risk_score,
+          anomaly: getProcessed(reading).anomaly,
+        }));
+        normalized.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setHistory(normalized);
       } catch (err) {
         toast.error('Error loading deep analytics');
       } finally {
@@ -98,7 +115,7 @@ export default function Analytics() {
       },
       {
         label: 'Gas (ppm)',
-        data: history.map(d => d.gas_ppm || d.gas || 0),
+        data: history.map(d => d.gas_ppm ?? d.gas ?? 0),
         borderColor: '#f59e0b',
         backgroundColor: 'rgba(245, 158, 11, 0.1)',
         tension: 0.4,
@@ -147,7 +164,7 @@ export default function Analytics() {
                     labels,
                     datasets: [{
                       label: 'Risk Score (0-100)',
-                      data: history.map(d => d.risk_score),
+                      data: history.map(d => d.risk_score ?? d.processed?.risk_score ?? 0),
                       borderColor: '#a04030',
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
                       tension: 0.4,

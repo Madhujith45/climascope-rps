@@ -36,6 +36,14 @@ function normalizeDeviceLabel(deviceId) {
   return String(deviceId).trim() === 'climascope_001' ? 'climascope-pi001' : deviceId
 }
 
+function getRawReading(reading) {
+  return reading?.raw || {}
+}
+
+function getProcessedReading(reading) {
+  return reading?.processed || {}
+}
+
 export default function Dashboard() {
   const { selectedDevice, user } = useOutletContext()
   const [latestReading,  setLatestReading]  = useState(null)
@@ -74,13 +82,14 @@ export default function Dashboard() {
   // ── fetch AI prediction ───────────────────────────────────────────
   const fetchPrediction = useCallback(async (reading) => {
     if (!reading) return
+    const raw = getRawReading(reading)
     try {
       const result = await getPrediction({
-        temperature: reading.temperature  ?? 0,
-        humidity:    reading.humidity      ?? 50,
-        pressure:    reading.pressure      ?? 1013,
-        gas_voltage: reading.mq2_voltage   ?? 1.5,
-        gas_ppm:     reading.gas_ppm       ?? 200,
+        temperature: raw.temperature  ?? 0,
+        humidity:    raw.humidity     ?? 50,
+        pressure:    raw.pressure     ?? 1013,
+        gas_voltage: raw.mq2_voltage  ?? raw.gas_voltage ?? 1.5,
+        gas_ppm:     raw.gas          ?? raw.gas_ppm ?? 200,
       })
       setPrediction(result)
     } catch { /* silently ignore */ }
@@ -102,11 +111,13 @@ export default function Dashboard() {
   const displayPrediction = useMemo(() => {
     if (!latestReading) return prediction
 
-    const readingAnomaly = Boolean(latestReading?.anomaly ?? latestReading?.anomaly_flag)
+    const raw = getRawReading(latestReading)
+    const processed = getProcessedReading(latestReading)
+    const readingAnomaly = Boolean(processed?.anomaly ?? latestReading?.anomaly ?? latestReading?.anomaly_flag)
     const readingLevel = String(
-      latestReading?.level || latestReading?.risk_level || latestReading?.risk_local || ''
+      processed?.level || latestReading?.level || latestReading?.risk_level || latestReading?.risk_local || ''
     ).toUpperCase()
-    const readingRiskScore = Number(latestReading?.risk_score)
+    const readingRiskScore = Number(processed?.risk_score ?? latestReading?.risk_score)
     const hasReadingRisk = readingLevel.length > 0 || Number.isFinite(readingRiskScore)
 
     if (!hasReadingRisk) return prediction
@@ -168,7 +179,7 @@ export default function Dashboard() {
 
   // Determine if a metric should glow red (alert highlight)
   const alertMetric = displayPrediction?.anomaly
-    ? (Number(latestReading?.gas_ppm) > 200 ? 'gas_ppm' : 'temperature')
+    ? (Number(getProcessedReading(latestReading)?.gas_ppm ?? getRawReading(latestReading)?.gas) > 200 ? 'gas_ppm' : 'temperature')
     : null
 
   return (
@@ -229,9 +240,9 @@ export default function Dashboard() {
         </div>
         <div className="lg:col-span-2">
           <RiskGauge 
-            score={latestReading?.risk_score} 
-            riskLevel={latestReading?.level} 
-            anomalyFlag={latestReading?.anomaly} 
+            score={latestReading?.processed?.risk_score} 
+            riskLevel={latestReading?.processed?.level} 
+            anomalyFlag={latestReading?.processed?.anomaly} 
             riskReason={null} 
           />
         </div>

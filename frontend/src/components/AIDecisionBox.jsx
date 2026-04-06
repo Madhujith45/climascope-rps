@@ -20,12 +20,14 @@ function getTrend(chartData, key) {
 function getDecision(prediction, data, chartData) {
   if (!prediction || !data) return { text: 'Connecting to AI system...', severity: 'info', why: '' }
 
+  const raw = data?.raw || {}
+  const processed = data?.processed || {}
   const gasTrend  = getTrend(chartData, 'gas_ppm')
   const tempTrend = getTrend(chartData, 'temperature')
-  const gas  = Number(data.gas_ppm)
-  const temp = Number(data.temperature)
+  const gas  = Number(processed.gas_ppm ?? raw.gas)
+  const temp = Number(raw.temperature)
 
-  if (prediction.anomaly) {
+  if (prediction.anomaly ?? processed.anomaly) {
     const why = gasTrend.dir === 'rising'
       ? `Gas level increased by ${Math.abs(gasTrend.delta).toFixed(1)} ppm in last 10 readings.`
       : tempTrend.dir === 'rising'

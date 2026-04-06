@@ -15,7 +15,7 @@ export default function RiskTimeline({ prediction, chartData, loading }) {
     const current = prediction?.health_score ?? 70
     // Derive past risk from older chart data health heuristic
     const olderTemps = (chartData || []).slice(10, 30)
-      .map(r => Number(r?.temperature)).filter(v => !isNaN(v))
+      .map(r => Number(r?.raw?.temperature)).filter(v => !isNaN(v))
     const avgOld = olderTemps.length > 0
       ? olderTemps.reduce((a, b) => a + b, 0) / olderTemps.length
       : 28

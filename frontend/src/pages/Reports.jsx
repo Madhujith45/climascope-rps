@@ -5,6 +5,14 @@ import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+function getRaw(reading) {
+  return reading?.raw || {};
+}
+
+function getProcessed(reading) {
+  return reading?.processed || {};
+}
+
 export default function Reports() {
   const [downloading, setDownloading] = useState(false);
 
@@ -19,7 +27,15 @@ export default function Reports() {
       if (!res.ok) throw new Error('Failed to fetch data for report');
       const data = await res.json();
       
-      const records = data.records || [];
+      const records = (data.records || []).map((reading) => ({
+        ...reading,
+        temperature: getRaw(reading).temperature,
+        humidity: getRaw(reading).humidity,
+        pressure: getRaw(reading).pressure,
+        gas_ppm: getProcessed(reading).gas_ppm ?? getRaw(reading).gas,
+        risk_score: getProcessed(reading).risk_score,
+        anomaly: getProcessed(reading).anomaly,
+      }));
       if (records.length === 0) {
         toast.error('No data available to export.');
         return;
@@ -37,7 +53,7 @@ export default function Reports() {
           row.temperature,
           row.humidity,
           row.pressure,
-          row.gas || row.gas_ppm || 0,
+          row.gas_ppm ?? row.gas ?? 0,
           row.risk_score,
           row.anomaly
         ];

@@ -8,9 +8,11 @@ function getInsights(prediction, data) {
   const items = []
   if (!prediction || !data) return items
 
-  const temp    = data.temperature
-  const humidity = data.humidity
-  const gasPpm  = data.gas_ppm
+  const raw = data?.raw || {}
+  const processed = data?.processed || {}
+  const temp    = raw.temperature
+  const humidity = raw.humidity
+  const gasPpm  = processed.gas_ppm ?? raw.gas
 
   if (temp != null) {
     const t = Number(temp)
@@ -33,7 +35,7 @@ function getInsights(prediction, data) {
     else             items.push({ icon: 'OK', text: 'Air quality is clean. Gas levels nominal.', severity: 'safe' })
   }
 
-  if (prediction.anomaly) {
+  if (prediction.anomaly ?? processed.anomaly) {
     items.unshift({ icon: 'AI', text: 'ML model detected an anomaly in sensor pattern.', severity: 'danger' })
   }
 

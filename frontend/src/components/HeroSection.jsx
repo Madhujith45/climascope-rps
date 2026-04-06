@@ -8,7 +8,7 @@ function getAIInsight(data, prediction) {
   if (!data && !prediction) return 'Connecting to sensors...'
   const status = prediction?.status || 'normal'
   const anomaly = prediction?.anomaly
-  const temp    = data?.temperature
+  const temp    = data?.raw?.temperature
 
   if (anomaly)        return 'Anomaly detected - environmental conditions deviate from baseline.'
   if (status === 'danger')  return 'Critical conditions detected. Immediate attention required.'
@@ -25,7 +25,7 @@ function getAIInsight(data, prediction) {
 
 export default function HeroSection({ data, prediction, loading }) {
   const [displayed, setDisplayed] = useState('')
-  const temp = data?.temperature
+  const temp = data?.raw?.temperature
 
   // Typewriter effect for AI insight
   const insight = getAIInsight(data, prediction)

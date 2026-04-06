@@ -12,14 +12,16 @@ function getLabel(score) {
 
 function getExplanation(score, prediction, data) {
   if (!data || !prediction) return 'Analyzing environmental conditions...'
-  const temp = Number(data.temperature)
-  const gas  = Number(data.gas_ppm)
+  const raw = data?.raw || {}
+  const processed = data?.processed || {}
+  const temp = Number(raw.temperature)
+  const gas  = Number(processed.gas_ppm ?? raw.gas)
 
   if (score >= 80) {
     const reasons = []
     if (!isNaN(temp) && temp > 15 && temp < 35) reasons.push('temperature is in safe range')
     if (!isNaN(gas) && gas < 200) reasons.push('gas levels are nominal')
-    if (!prediction.anomaly) reasons.push('no anomalies detected')
+    if (!(prediction.anomaly ?? processed.anomaly)) reasons.push('no anomalies detected')
     return `Stable because ${reasons.join(', ')}.`
   }
   if (score >= 50) {

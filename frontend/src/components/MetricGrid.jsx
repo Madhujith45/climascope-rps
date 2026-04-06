@@ -89,8 +89,10 @@ function AnimatedNumber({ value, decimals = 1, color }) {
 }
 
 function MetricCard({ metric, data, chartData, isGlowing }) {
-  const raw = data?.[metric.key]
-  const value = raw != null ? Number(raw) : null
+  const raw = data?.raw || {}
+  const processed = data?.processed || {}
+  const sourceValue = metric.key === 'gas_ppm' ? (processed.gas_ppm ?? raw.gas) : raw[metric.key]
+  const value = sourceValue != null ? Number(sourceValue) : null
   const pct = value != null ? Math.min(100, Math.max(0, ((value - metric.min) / (metric.max - metric.min)) * 100)) : 0
   const barColor = pct > 80 ? '#a04030' : pct > 55 ? '#f59e0b' : metric.color
 
@@ -98,7 +100,7 @@ function MetricCard({ metric, data, chartData, isGlowing }) {
   const predText = value != null ? getPredText(trend, metric) : null
 
   const sparkValues = useMemo(() =>
-    chartData.slice(0, 20).reverse().map(r => r[metric.key]).filter(v => v != null).map(Number), [chartData, metric.key])
+    chartData.slice(0, 20).reverse().map(r => (metric.key === 'gas_ppm' ? (r?.processed?.gas_ppm ?? r?.raw?.gas) : r?.raw?.[metric.key])).filter(v => v != null).map(Number), [chartData, metric.key])
 
   return (
     <div
