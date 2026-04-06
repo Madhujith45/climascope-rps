@@ -7,7 +7,7 @@
 
 # ── Sensor hardware drivers ───────────────────────────────────────────────────
 # RPi.GPIO / I2C interfaces must be enabled in raspi-config
-Adafruit-DHT==1.4.0
+adafruit-circuitpython-dht==4.0.5
 adafruit-circuitpython-bmp280==3.3.6
 adafruit-circuitpython-ads1x15==2.4.4
 

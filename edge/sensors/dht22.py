@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 
 # Try to import the real hardware library; gracefully degrade on non-Pi systems.
 try:
-    import Adafruit_DHT  # type: ignore
+    import adafruit_dht  # type: ignore
+    import board  # type: ignore
     _HARDWARE_AVAILABLE = True
-    _SENSOR = Adafruit_DHT.DHT22
-except ImportError:
+    # Initialize sensor on BCM pin 4 (board.D4)
+    _SENSOR = adafruit_dht.DHT22(board.D4)
+except (ImportError, RuntimeError, AttributeError):
     _HARDWARE_AVAILABLE = False
-    logger.warning("Adafruit_DHT not found – DHT22 will return SIMULATED data.")
+    logger.warning("adafruit_dht or board not found – DHT22 will return SIMULATED data.")
+    _SENSOR = None  # type: ignore
 
 # GPIO pin number (BCM numbering) where the DHT22 data line is connected.
 DHT22_GPIO_PIN: int = 4
@@ -45,21 +48,23 @@ def read_dht22() -> dict:
         return _simulated_reading()
 
     for attempt in range(1, MAX_RETRIES + 1):
-        humidity, temperature = Adafruit_DHT.read_retry(
-            _SENSOR, DHT22_GPIO_PIN, retries=1
-        )
-        if humidity is not None and temperature is not None:
-            # Sanity-clamp to physically plausible ranges.
-            temperature = max(-40.0, min(80.0, float(temperature)))
-            humidity = max(0.0, min(100.0, float(humidity)))
-            logger.debug(
-                "DHT22 reading: temp=%.2f°C  hum=%.2f%%", temperature, humidity
-            )
-            return {"temperature": temperature, "humidity": humidity}
-
-        logger.warning("DHT22 read failure (attempt %d/%d)", attempt, MAX_RETRIES)
-        if attempt < MAX_RETRIES:
-            time.sleep(RETRY_DELAY_S)
+        try:
+            temperature = _SENSOR.temperature
+            humidity = _SENSOR.humidity
+            if temperature is not None and humidity is not None:
+                # Sanity-clamp to physically plausible ranges.
+                temperature = max(-40.0, min(80.0, float(temperature)))
+                humidity = max(0.0, min(100.0, float(humidity)))
+                logger.debug(
+                    "DHT22 reading: temp=%.2f°C  hum=%.2f%%", temperature, humidity
+                )
+                return {"temperature": temperature, "humidity": humidity}
+        except (RuntimeError, OSError) as e:
+            # CircuitPython DHT raises RuntimeError or OSError on read failure
+            logger.warning("DHT22 read failure (attempt %d/%d): %s", attempt, MAX_RETRIES, e)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY_S)
+            continue
 
     raise RuntimeError(
         f"DHT22 unreadable after {MAX_RETRIES} attempts on GPIO {DHT22_GPIO_PIN}"
