@@ -2,7 +2,12 @@ import time
 import requests
 import json
 import os
+import logging
 from processing.risk_engine import RiskEngine
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Import mock or real sensors based on existing project structure
 import random
@@ -18,8 +23,9 @@ def read_sensors():
 
 def main():
     engine = RiskEngine(window_size=10)
-    backend_url = os.getenv("CLIMASCOPE_BACKEND", "http://127.0.0.1:8000/data")
+    backend_url = os.getenv("CLIMASCOPE_BACKEND_URL", "https://climascope-rps.onrender.com/api/data")
 
+    logger.info(f"Using backend: {backend_url}")
     print(f"Starting ClimaScope Edge. Sending data to {backend_url} every 3s")
 
     while True:

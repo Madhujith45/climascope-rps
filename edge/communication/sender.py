@@ -25,8 +25,10 @@ logger = logging.getLogger(__name__)
 # Configuration  (override via environment variables)
 # ─────────────────────────────────────────────────────────────────────────────
 
-BACKEND_URL: str = os.environ.get("CLIMASCOPE_BACKEND_URL", "http://localhost:8000")
+BACKEND_URL: str = os.environ.get("CLIMASCOPE_BACKEND_URL", "https://climascope-rps.onrender.com")
 POST_ENDPOINT: str = f"{BACKEND_URL}/api/data"
+
+logger.info(f"Using backend: {BACKEND_URL}")
 
 DEVICE_ID: str = os.environ.get("CLIMASCOPE_DEVICE_ID", "climascope-pi001")
 API_KEY: str = os.environ.get("CLIMASCOPE_API_KEY", "")  # Device API key for auth
