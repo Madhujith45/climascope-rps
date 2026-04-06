@@ -31,6 +31,11 @@ function parseReadingTimestamp(reading) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function normalizeDeviceLabel(deviceId) {
+  if (!deviceId) return deviceId
+  return String(deviceId).trim() === 'climascope_001' ? 'climascope-pi001' : deviceId
+}
+
 export default function Dashboard() {
   const { selectedDevice, user } = useOutletContext()
   const [latestReading,  setLatestReading]  = useState(null)
@@ -125,7 +130,7 @@ export default function Dashboard() {
 
   const connectionInfo = useMemo(() => {
     const latestTs = parseReadingTimestamp(latestReading)
-    const latestDeviceId = latestReading?.device_id || null
+    const latestDeviceId = normalizeDeviceLabel(latestReading?.device_id || null)
     const dataAgeMs = latestTs ? Date.now() - latestTs.getTime() : Number.POSITIVE_INFINITY
     const isFresh = Number.isFinite(dataAgeMs) && dataAgeMs <= 45_000
     const hasDevice = Boolean(latestDeviceId)

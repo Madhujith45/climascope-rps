@@ -218,7 +218,7 @@ export default function Settings() {
 
               <p className="text-xs text-gray-500 mt-1">Required if SMS receiving is enabled.</p>
               {["sms", "both"].includes(alertMode) && !phone && (
-                <p className="text-xs text-amber-500 mt-1 font-medium">?? Warning: Phone number is required for SMS alerts</p>
+                <p className="text-xs text-amber-500 mt-1 font-medium">Warning: Phone number is required for SMS alerts</p>
               )}
             </div>
 

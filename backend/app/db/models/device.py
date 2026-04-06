@@ -39,6 +39,7 @@ class DeviceResponse(BaseModel):
     created_at: datetime = Field(..., description="Device creation timestamp")
     last_seen: Optional[datetime] = Field(None, description="Last data received timestamp")
     is_active: bool = Field(True, description="Device status")
+    status: Optional[str] = Field(None, description="Device connection status (online/offline/slow)")
 
 class DeviceUpdate(BaseModel):
     """Device model for updates"""

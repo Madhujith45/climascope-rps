@@ -18,7 +18,7 @@ from ..utils.security import generate_api_key, hash_otp as hash_api_key
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/devices", tags=["devices"])
+router = APIRouter(prefix="/api/devices", tags=["devices"])
 
 class DeviceListResponse(BaseModel):
     """Response model for device list"""
@@ -339,4 +339,69 @@ async def device_heartbeat(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update heartbeat"
+        )
+
+
+@router.get("", response_model=DeviceResponse)
+async def get_user_device(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get the default device for the authenticated user (climascope-pi001).
+    This is a convenience endpoint for single-device deployments.
+    Returns the device with status, last_seen timestamp, etc.
+    
+    Returns:
+        DeviceResponse: The user's ClimaScope Pi device
+    
+    Raises:
+        404: If device has not been created yet (no telemetry received)
+    """
+    try:
+        db = get_mongo_db()
+        user_id = str(current_user["_id"])
+        
+        # Look for the default device
+        device = await db.devices.find_one({
+            "user_id": user_id,
+            "device_id": "climascope-pi001"
+        })
+        
+        if not device:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Device not found. Send telemetry data to /api/data to auto-create device."
+            )
+        
+        # Calculate status based on last_seen
+        last_seen = device.get("last_seen")
+        now = datetime.utcnow()
+        status = "offline"
+        
+        if last_seen:
+            age_seconds = (now - last_seen).total_seconds()
+            if age_seconds <= 45:  # Live if data received within last 45 seconds
+                status = "online"
+            elif age_seconds <= 300:  # Slow if data within 5 minutes
+                status = "slow"
+        
+        return {
+            "id": str(device["_id"]),
+            "device_id": device["device_id"],
+            "device_name": device.get("device_name", "climascope-pi001"),
+            "location": device.get("location"),
+            "description": device.get("description"),
+            "created_at": device["created_at"],
+            "last_seen": last_seen,
+            "is_active": device.get("is_active", True),
+            "status": status
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get user device error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get device"
         )

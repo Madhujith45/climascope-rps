@@ -95,7 +95,7 @@ export default function HistoryTable({
             type="text"
             value={deviceId}
             onChange={(e) => onDeviceChange?.(e.target.value)}
-            placeholder="e.g. climascope_001"
+            placeholder="e.g. climascope-pi001"
             className="w-44 rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5
                        text-xs text-gray-200 placeholder-gray-500
                        focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/40

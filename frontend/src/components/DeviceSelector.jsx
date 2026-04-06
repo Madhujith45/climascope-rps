@@ -19,12 +19,21 @@ function DeviceSelector({ selectedDevice, onDeviceChange, className = "" }) {
           throw new Error('No authentication token found')
         }
 
-        const response = await fetch('/devices/list', {
+        let response = await fetch('/api/devices/list', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
+
+        if (!response.ok) {
+          response = await fetch('/devices/list', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+        }
 
         if (!response.ok) {
           throw new Error('Failed to fetch devices')

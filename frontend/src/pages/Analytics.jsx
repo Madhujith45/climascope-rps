@@ -80,7 +80,7 @@ export default function Analytics() {
     labels,
     datasets: [
       {
-        label: 'Temperature (�C)',
+        label: 'Temperature (°C)',
         data: history.map(d => d.temperature),
         borderColor: '#4a8040',
         backgroundColor: 'rgba(45, 212, 191, 0.1)',
@@ -114,7 +114,7 @@ export default function Analytics() {
         <div className="glass-card p-10 flex flex-col items-center justify-center text-center h-96 skeleton rounded-2xl" />
       ) : history.length === 0 ? (
         <div className="glass-card p-10 flex flex-col items-center justify-center text-center h-96">
-          <div className="text-4xl mb-4">??</div>
+          <div className="text-4xl mb-4">N/A</div>
           <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No Data Available Yet</h3>
           <p className="text-sm text-gray-400 max-w-sm">Connect a device to start recording analytics over time.</p>
         </div>

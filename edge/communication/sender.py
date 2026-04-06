@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 BACKEND_URL: str = os.environ.get("CLIMASCOPE_BACKEND_URL", "http://localhost:8000")
 POST_ENDPOINT: str = f"{BACKEND_URL}/api/data"
 
-DEVICE_ID: str = os.environ.get("CLIMASCOPE_DEVICE_ID", "climascope_001")
+DEVICE_ID: str = os.environ.get("CLIMASCOPE_DEVICE_ID", "climascope-pi001")
 API_KEY: str = os.environ.get("CLIMASCOPE_API_KEY", "")  # Device API key for auth
 
 REQUEST_TIMEOUT_S: float = 5.0        # per-request timeout

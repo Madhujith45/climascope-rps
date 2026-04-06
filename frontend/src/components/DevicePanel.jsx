@@ -4,8 +4,18 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+function isDeviceOnline(device) {
+  if (device?.last_seen) {
+    const lastSeen = new Date(device.last_seen).getTime()
+    if (Number.isFinite(lastSeen)) {
+      return Date.now() - lastSeen <= 45_000
+    }
+  }
+  return device?.is_active !== false
+}
+
 function DeviceCard({ device, isSelected, onSelect }) {
-  const online = device.is_active !== false
+  const online = isDeviceOnline(device)
   return (
     <button
       onClick={() => onSelect(isSelected ? '' : device.device_id)}
@@ -81,14 +91,47 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
     const load = async () => {
       try {
         const token = getAuthToken()
-        const res = await fetch('/devices/list', { headers: { Authorization: `Bearer ${token}` } })
+        // Try new endpoint first (/api/devices), fallback to old endpoint
+        let res = await fetch('/api/devices/list', { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) {
+          res = await fetch('/devices/list', { headers: { Authorization: `Bearer ${token}` } })
+        }
         if (!res.ok) return
         const d = await res.json()
-        setDevices(d.devices || [])
+        const list = d.devices || []
+
+        // Fallback: if no registered device exists yet, infer one from latest telemetry.
+        if (list.length === 0) {
+          const latestRes = await fetch('/api/data/latest?n=1', { headers: { Authorization: `Bearer ${token}` } })
+          if (latestRes.ok) {
+            const latest = await latestRes.json()
+            const latestDoc = Array.isArray(latest) ? latest[0] : latest
+            if (latestDoc) {
+              const inferredDeviceId = latestDoc.device_id || 'climascope-pi001'
+              setDevices([
+                {
+                  id: inferredDeviceId,
+                  device_id: inferredDeviceId,
+                  device_name: inferredDeviceId,
+                  location: 'Auto-detected',
+                  is_active: true,
+                  last_seen: latestDoc.timestamp || null,
+                },
+              ])
+              return
+            }
+          }
+        }
+
+        setDevices(list)
       } catch { /* ignore */ }
       finally { setLoading(false) }
     }
     load()
+    
+    // Refresh every 10 seconds to catch new devices
+    const interval = setInterval(load, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -106,7 +149,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
         <div>
           <div className="text-sm font-semibold text-[var(--text-primary)]">Connected Devices</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {devices.filter(d => d.is_active !== false).length} online
+            {devices.filter(d => isDeviceOnline(d)).length} online
           </div>
         </div>
       </div>

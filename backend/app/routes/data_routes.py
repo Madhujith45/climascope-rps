@@ -1,13 +1,18 @@
 import datetime
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+import logging
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, Field
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.utils.security import hash_otp as hash_api_key
-
+from app.auth.jwt_handler import verify_token
 from app.db.mongo import get_mongo_db
 from app.services.alert_service import trigger_alert
+from bson import ObjectId
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/data", tags=["data"])
+security = HTTPBearer(auto_error=False)
 
 class SensorData(BaseModel):
     device_id: str | None = None
@@ -27,8 +32,74 @@ class SensorData(BaseModel):
     anomaly_flag: bool = False
     risk_reason: str | None = None
 
+
+async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Extract user from optional JWT bearer token"""
+    if not credentials:
+        return None
+    try:
+        token = credentials.credentials
+        payload = verify_token(token)
+        user_id = payload.get("sub")
+        if user_id:
+            db = get_mongo_db()
+            user_doc = await db.users.find_one({"_id": ObjectId(user_id)})
+            if user_doc:
+                return {"_id": str(user_doc["_id"]), "email": user_doc.get("email")}
+    except Exception as e:
+        logger.debug(f"Optional auth token verification failed: {str(e)}")
+    return None
+
+
+async def ensure_device_for_user(db, user_id: str):
+    """
+    Auto-create or update 'climascope-pi001' device for user if it doesn't exist.
+    Returns device_id of the device.
+    """
+    device_id = "climascope-pi001"
+    device_doc = await db.devices.find_one({
+        "user_id": user_id,
+        "device_id": device_id
+    })
+    
+    now = datetime.datetime.utcnow()
+    
+    if device_doc:
+        # Update last_seen timestamp
+        await db.devices.update_one(
+            {"_id": device_doc["_id"]},
+            {
+                "$set": {
+                    "last_seen": now,
+                    "updated_at": now,
+                    "is_active": True,
+                    "status": "online"
+                }
+            }
+        )
+        logger.debug(f"Updated device {device_id} for user {user_id}")
+    else:
+        # Create new device
+        new_device = {
+            "user_id": user_id,
+            "device_id": device_id,
+            "device_name": "climascope-pi001",
+            "location": "Default",
+            "description": "Auto-created from first telemetry data",
+            "status": "online",
+            "is_active": True,
+            "created_at": now,
+            "updated_at": now,
+            "last_seen": now
+        }
+        result = await db.devices.insert_one(new_device)
+        logger.info(f"Auto-created device {device_id} for user {user_id}")
+    
+    return device_id
+
+
 @router.post("")
-async def post_data(data: SensorData, background_tasks: BackgroundTasks):
+async def post_data(data: SensorData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_optional_user)):
     db = get_mongo_db()
     level = (data.level or data.risk_level or data.risk_local or "").upper()
     anomaly_detected = bool(data.anomaly or data.anomaly_flag)
@@ -36,19 +107,30 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks):
 
     # Best-effort user/device resolution for alert ownership and auth checks.
     owner_user_id = None
-    if data.device_id:
+    device_id_to_use = data.device_id or "climascope-pi001"
+    
+    # Priority 1: JWT-authenticated user (auto-create device)
+    if current_user:
+        owner_user_id = str(current_user.get("_id"))
+        device_id_to_use = await ensure_device_for_user(db, owner_user_id)
+    # Priority 2: Device ID + API key (existing device auth)
+    elif data.device_id:
         device_doc = await db.devices.find_one({"device_id": data.device_id})
         if device_doc:
             owner_user_id = str(device_doc.get("user_id")) if device_doc.get("user_id") else None
             if data.api_key and device_doc.get("api_key_hash"):
                 if hash_api_key(data.api_key) != device_doc.get("api_key_hash"):
                     raise HTTPException(status_code=401, detail="Invalid device credentials")
+    else:
+        # No auth provided - still accept data for sensors
+        logger.warning("Data received without authentication (device_id or JWT token)")
 
     doc = data.dict()
     doc.pop("api_key", None)
     doc["risk_score"] = score
     doc["level"] = level or None
     doc["anomaly"] = anomaly_detected
+    doc["device_id"] = device_id_to_use
     doc["timestamp"] = data.timestamp or datetime.datetime.utcnow().isoformat()
 
     await db.sensor_readings.insert_one(doc)
@@ -70,11 +152,11 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks):
             score,
             level or "MEDIUM",
             reason_str,
-            data.device_id,
+            device_id_to_use,
             owner_user_id,
         )
 
-    return {"status": "success", "message": "Data processed"}
+    return {"status": "success", "message": "Data processed", "device_id": device_id_to_use}
 
 @router.get("/latest")
 async def get_latest(n: int = 1):
