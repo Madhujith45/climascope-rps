@@ -5,6 +5,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getAuthToken } from '../services/auth'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 export default function Topbar({ user, secondsAgo, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLive, setIsLive] = useState(false)
@@ -38,7 +40,7 @@ export default function Topbar({ user, secondsAgo, onLogout }) {
           return
         }
 
-        const res = await fetch('/api/data/latest?n=1', {
+        const res = await fetch(`${BASE_URL}/api/data/latest?n=1`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) throw new Error('latest fetch failed')

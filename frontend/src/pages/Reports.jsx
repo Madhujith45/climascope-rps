@@ -3,6 +3,8 @@ import { PageHeader } from '../components/PageHeader';
 import { getAuthToken } from '../services/auth';
 import toast from 'react-hot-toast';
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 export default function Reports() {
   const [downloading, setDownloading] = useState(false);
 
@@ -11,7 +13,7 @@ export default function Reports() {
     try {
       const token = getAuthToken();
       // Fetch a larger chunk for reports
-      const res = await fetch('/api/data/history?limit=1000', {
+      const res = await fetch(`${BASE_URL}/api/data/history?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch data for report');

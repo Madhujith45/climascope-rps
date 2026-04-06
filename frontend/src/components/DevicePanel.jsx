@@ -4,6 +4,8 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 function isDeviceOnline(device) {
   if (device?.last_seen) {
     const lastSeen = new Date(device.last_seen).getTime()
@@ -92,9 +94,9 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
       try {
         const token = getAuthToken()
         // Try new endpoint first (/api/devices), fallback to old endpoint
-        let res = await fetch('/api/devices/list', { headers: { Authorization: `Bearer ${token}` } })
+        let res = await fetch(`${BASE_URL}/api/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) {
-          res = await fetch('/devices/list', { headers: { Authorization: `Bearer ${token}` } })
+          res = await fetch(`${BASE_URL}/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
         }
         if (!res.ok) return
         const d = await res.json()
@@ -102,7 +104,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
 
         // Fallback: if no registered device exists yet, infer one from latest telemetry.
         if (list.length === 0) {
-          const latestRes = await fetch('/api/data/latest?n=1', { headers: { Authorization: `Bearer ${token}` } })
+          const latestRes = await fetch(`${BASE_URL}/api/data/latest?n=1`, { headers: { Authorization: `Bearer ${token}` } })
           if (latestRes.ok) {
             const latest = await latestRes.json()
             const latestDoc = Array.isArray(latest) ? latest[0] : latest

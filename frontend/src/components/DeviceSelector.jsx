@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 function DeviceSelector({ selectedDevice, onDeviceChange, className = "" }) {
   const [devices, setDevices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,7 +21,7 @@ function DeviceSelector({ selectedDevice, onDeviceChange, className = "" }) {
           throw new Error('No authentication token found')
         }
 
-        let response = await fetch('/api/devices/list', {
+        let response = await fetch(`${BASE_URL}/api/devices/list`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -27,7 +29,7 @@ function DeviceSelector({ selectedDevice, onDeviceChange, className = "" }) {
         })
 
         if (!response.ok) {
-          response = await fetch('/devices/list', {
+          response = await fetch(`${BASE_URL}/devices/list`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'

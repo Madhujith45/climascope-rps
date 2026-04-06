@@ -3,6 +3,8 @@ import { PageHeader } from '../components/PageHeader';
 import { getAuthToken } from '../services/auth';
 import toast from 'react-hot-toast';
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 export default function Devices() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function Devices() {
   const fetchDevices = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/devices', {
+      const res = await fetch(`${BASE_URL}/api/devices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

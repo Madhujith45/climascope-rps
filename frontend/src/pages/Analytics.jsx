@@ -18,6 +18,7 @@ import { Line } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 const REFRESH_MS = 10_000;
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function Analytics() {
   const [history, setHistory] = useState([]);
@@ -27,7 +28,7 @@ export default function Analytics() {
     const fetchHistory = async () => {
       try {
         const token = getAuthToken();
-        const res = await fetch('/api/data/history?limit=100', {
+        const res = await fetch(`${BASE_URL}/api/data/history?limit=100`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Failed to fetch historical data');

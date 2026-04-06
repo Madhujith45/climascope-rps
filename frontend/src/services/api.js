@@ -2,8 +2,8 @@
  * ClimaScope – Axios API Service
  *
  * Set VITE_BACKEND_URL in your .env file (or Vercel environment variables)
- * to point at your Raspberry Pi / server backend, e.g.:
- *   VITE_BACKEND_URL=http://192.168.1.50:8000
+ * to point at your backend service, e.g.:
+ *   VITE_BACKEND_URL=https://climascope-rps.onrender.com
  *
  * During local development the Vite dev-server proxy forwards /api/* to the
  * backend without stripping the /api prefix.

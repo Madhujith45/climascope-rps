@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 import ClimaScopeLogo from './ClimaScopeLogo'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 export default function FloatingChatbot({ selectedDevice }) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([{ content: "Hi! I'm your ClimaScope AI assistant. Do you need insights on your current climate data?", role: "assistant" }])
@@ -28,8 +30,8 @@ export default function FloatingChatbot({ selectedDevice }) {
       let contextData = {}
       try {
         const url = selectedDevice 
-          ? `/api/data/latest?n=1&device_id=${selectedDevice}` 
-          : `/api/data/latest?n=1`
+          ? `${BASE_URL}/api/data/latest?n=1&device_id=${selectedDevice}` 
+          : `${BASE_URL}/api/data/latest?n=1`
         const d_res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
         if (d_res.ok) {
           const arr = await d_res.json()
@@ -38,7 +40,7 @@ export default function FloatingChatbot({ selectedDevice }) {
       } catch (e) { console.error("Could not fetch context data for chat", e) }
 
       // Send to AI endpoint
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
