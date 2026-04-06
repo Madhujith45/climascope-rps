@@ -1,5 +1,5 @@
 /**
- * ClimaScope – System Status Block (SAFE / WARNING / CRITICAL)
+ * ClimaScope - System Status Block (SAFE / WARNING / CRITICAL)
  */
 import React from 'react'
 
@@ -7,10 +7,10 @@ const STATUS_CONFIG = {
   normal: {
     label:   'SAFE',
     subtext: 'All environmental parameters within normal range.',
-    color:   '#22c55e',
-    glow:    'rgba(34,197,94,0.25)',
-    bg:      'rgba(34,197,94,0.08)',
-    border:  'rgba(34,197,94,0.25)',
+    color:   '#4a8040',
+    glow:    'rgba(16,185,129,0.25)',
+    bg:      'rgba(16,185,129,0.08)',
+    border:  'rgba(16,185,129,0.25)',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -20,10 +20,10 @@ const STATUS_CONFIG = {
   warning: {
     label:   'WARNING',
     subtext: 'Sensor readings approaching threshold limits. Monitor closely.',
-    color:   '#f59e0b',
-    glow:    'rgba(245,158,11,0.25)',
-    bg:      'rgba(245,158,11,0.08)',
-    border:  'rgba(245,158,11,0.25)',
+    color:   '#b8860b',
+    glow:    'rgba(251,146,60,0.25)',
+    bg:      'rgba(251,146,60,0.08)',
+    border:  'rgba(251,146,60,0.25)',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -33,10 +33,10 @@ const STATUS_CONFIG = {
   danger: {
     label:   'CRITICAL',
     subtext: 'Critical environmental conditions detected. Immediate action required.',
-    color:   '#ef4444',
-    glow:    'rgba(239,68,68,0.25)',
-    bg:      'rgba(239,68,68,0.08)',
-    border:  'rgba(239,68,68,0.25)',
+    color:   '#a04030',
+    glow:    'rgba(160,64,48,0.35)',
+    bg:      'rgba(160,64,48,0.12)',
+    border:  'rgba(160,64,48,0.35)',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -118,10 +118,14 @@ export default function StatusBlock({ prediction, loading }) {
 
       {prediction?.anomaly && (
         <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2"
-             style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <span style={{ color: '#ef4444', fontSize: 13 }}>⚠ Anomaly detected by ML model</span>
+             style={{ background: 'rgba(160,64,48,0.18)', border: '1px solid rgba(160,64,48,0.35)' }}>
+          <span style={{ color: '#a04030', fontSize: 13 }}>WARNING Anomaly detected by ML model</span>
         </div>
       )}
     </div>
   )
 }
+
+
+
+

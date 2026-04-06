@@ -1,5 +1,5 @@
 /**
- * ClimaScope – Line Charts Component
+ * ClimaScope - Line Charts Component
  * Three auto-updating time-series charts using react-chartjs-2:
  *   Temperature vs Time | Pressure vs Time | Gas PPM vs Time
  */
@@ -95,7 +95,7 @@ function makeOptions(unit) {
       legend: { display: false },
       tooltip: {
         backgroundColor: '#1e293b',
-        titleColor: '#94a3b8',
+        titleColor: '#8a8060',
         bodyColor: '#e2e8f0',
         borderColor: '#334155',
         borderWidth: 1,
@@ -107,11 +107,11 @@ function makeOptions(unit) {
     },
     scales: {
       x: {
-        ticks: { color: '#64748b', maxTicksLimit: 8, font: { size: 10 } },
+        ticks: { color: '#8a8060', maxTicksLimit: 8, font: { size: 10 } },
         grid:  { color: '#1e293b' },
       },
       y: {
-        ticks: { color: '#64748b', font: { size: 10 } },
+        ticks: { color: '#8a8060', font: { size: 10 } },
         grid:  { color: '#1e2d45' },
       },
     },
@@ -123,16 +123,16 @@ function ChartCard({ def, records }) {
   const options   = useMemo(() => makeOptions(def.unit), [def.unit])
 
   return (
-    <div className="rounded-xl border border-slate-700/60 bg-card p-4">
+    <div className="rounded-xl border border-gray-700/60 bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
         <span
           className="inline-block h-2.5 w-2.5 rounded-full"
           style={{ background: def.color }}
         />
-        <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+        <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           {def.label}
         </h4>
-        <span className="ml-auto text-xs text-slate-600">{def.unit}</span>
+        <span className="ml-auto text-xs text-gray-600">{def.unit}</span>
       </div>
       <div className="h-44">
         <Line data={chartData} options={options} />
@@ -154,7 +154,7 @@ export default function Charts({ records }) {
         {CHART_DEFS.map((d) => (
           <div
             key={d.key}
-            className="h-64 rounded-xl border border-slate-700/60 bg-card animate-pulse"
+            className="h-64 rounded-xl border border-gray-700/60 bg-card animate-pulse"
           />
         ))}
       </div>
@@ -169,3 +169,5 @@ export default function Charts({ records }) {
     </div>
   )
 }
+
+

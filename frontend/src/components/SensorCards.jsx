@@ -12,10 +12,10 @@ const CARDS = [
     label: 'Temperature',
     unit: '°C',
     icon: '🌡️',
-    color: 'from-orange-500/20 to-orange-600/5',
-    border: 'border-orange-500/30',
-    textColor: 'text-orange-400',
-    barColor: 'bg-orange-400',
+    color: 'from-green-500/20 to-yellow-400/10',
+    border: 'border-green-500/40',
+    textColor: 'text-green-400',
+    barColor: 'bg-green-400',
     min: 25,
     max: 40,
   },
@@ -24,10 +24,10 @@ const CARDS = [
     label: 'Pressure',
     unit: 'hPa',
     icon: '🌐',
-    color: 'from-violet-500/20 to-violet-600/5',
-    border: 'border-violet-500/30',
-    textColor: 'text-violet-400',
-    barColor: 'bg-violet-400',
+    color: 'from-yellow-400/16 to-green-500/10',
+    border: 'border-yellow-400/35',
+    textColor: 'text-yellow-400',
+    barColor: 'bg-yellow-400',
     min: 980,
     max: 1020,
   },
@@ -36,10 +36,10 @@ const CARDS = [
     label: 'Gas PPM',
     unit: 'ppm',
     icon: '☁️',
-    color: 'from-emerald-500/20 to-emerald-600/5',
-    border: 'border-emerald-500/30',
-    textColor: 'text-emerald-400',
-    barColor: 'bg-emerald-400',
+    color: 'from-yellow-400/16 to-green-500/10',
+    border: 'border-yellow-400/35',
+    textColor: 'text-yellow-400',
+    barColor: 'bg-yellow-400',
     min: 0,
     max: 300,
   },
@@ -48,10 +48,10 @@ const CARDS = [
     label: 'MQ2 Voltage',
     unit: 'V',
     icon: '⚡',
-    color: 'from-sky-500/20 to-sky-600/5',
-    border: 'border-sky-500/30',
-    textColor: 'text-sky-400',
-    barColor: 'bg-sky-400',
+    color: 'from-green-500/20 to-yellow-400/10',
+    border: 'border-green-500/40',
+    textColor: 'text-green-400',
+    barColor: 'bg-green-400',
     min: 0,
     max: 5,
   },
@@ -60,7 +60,7 @@ const CARDS = [
 function ProgressBar({ value, min, max, barColor }) {
   const pct = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))
   return (
-    <div className="mt-3 h-1.5 w-full rounded-full bg-slate-700">
+    <div className="mt-3 h-1.5 w-full rounded-full bg-gray-700">
       <div
         className={`h-1.5 rounded-full transition-all duration-700 ${barColor}`}
         style={{ width: `${pct}%` }}
@@ -77,9 +77,9 @@ function SkeletonGrid() {
           key={c.key}
           className={`rounded-xl border bg-gradient-to-br p-5 animate-pulse ${c.color} ${c.border}`}
         >
-          <div className="h-4 w-24 rounded bg-slate-600" />
-          <div className="mt-4 h-8 w-28 rounded bg-slate-600" />
-          <div className="mt-3 h-1.5 w-full rounded bg-slate-700" />
+          <div className="h-4 w-24 rounded bg-gray-600" />
+          <div className="mt-4 h-8 w-28 rounded bg-gray-600" />
+          <div className="mt-3 h-1.5 w-full rounded bg-gray-700" />
         </div>
       ))}
     </div>
@@ -104,14 +104,14 @@ export default function SensorCards({ data }) {
             className={`rounded-xl border bg-gradient-to-br p-5 transition-all duration-300 hover:scale-[1.02] ${c.color} ${c.border}`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                 {c.label}
               </span>
               <span className="text-xl">{c.icon}</span>
             </div>
             <div className={`mt-2 text-3xl font-bold font-mono ${c.textColor}`}>
               {display}
-              <span className="ml-1 text-base font-normal text-slate-400">{c.unit}</span>
+              <span className="ml-1 text-base font-normal text-gray-400">{c.unit}</span>
             </div>
             {value !== null && (
               <ProgressBar value={value} min={c.min} max={c.max} barColor={c.barColor} />
@@ -122,3 +122,4 @@ export default function SensorCards({ data }) {
     </div>
   )
 }
+

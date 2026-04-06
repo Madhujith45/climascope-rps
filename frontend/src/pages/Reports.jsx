@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { getAuthToken } from '../services/auth';
 import toast from 'react-hot-toast';
@@ -67,7 +67,7 @@ export default function Reports() {
       
       <div className="glass-card p-10 flex flex-col items-center justify-center text-center h-96">
         <div className="text-4xl mb-4">??</div>
-        <h3 className="text-lg font-semibold text-white mb-2">Download Data Export</h3>
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Download Data Export</h3>
         <p className="text-sm text-gray-400 max-w-sm mb-6">
           Export the last 1000 sensor readings into a CSV file for external analysis, auditing, or compliance tracking.
         </p>
@@ -83,3 +83,5 @@ export default function Reports() {
     </div>
   );
 }
+
+

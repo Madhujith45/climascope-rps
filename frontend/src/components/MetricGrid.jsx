@@ -1,17 +1,17 @@
 /**
- * ClimaScope – Smart Metric Grid
+ * ClimaScope - Smart Metric Grid
  * 4 premium cards with trend arrows, status text, mini predictions, sparklines
  */
 import React, { useMemo, useRef, useEffect, useState } from 'react'
 
 const METRICS = [
-  { key: 'temperature', label: 'Temperature', unit: '°C', color: '#fb923c', min: 15, max: 45,
+  { key: 'temperature', label: 'Temperature', unit: '°C', color: '#4a8040', min: 15, max: 45,
     icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" /></svg> },
-  { key: 'humidity', label: 'Humidity', unit: '%', color: '#60a5fa', min: 0, max: 100,
+  { key: 'humidity', label: 'Humidity', unit: '%', color: '#4a8040', min: 0, max: 100,
     icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg> },
-  { key: 'gas_ppm', label: 'Air Quality', unit: 'ppm', color: '#34d399', min: 0, max: 500,
+  { key: 'gas_ppm', label: 'Air Quality', unit: 'ppm', color: '#b8860b', min: 0, max: 500,
     icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-  { key: 'pressure', label: 'Pressure', unit: 'hPa', color: '#a78bfa', min: 980, max: 1040,
+  { key: 'pressure', label: 'Pressure', unit: 'hPa', color: '#b8860b', min: 980, max: 1040,
     icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg> },
 ]
 
@@ -92,7 +92,7 @@ function MetricCard({ metric, data, chartData, isGlowing }) {
   const raw = data?.[metric.key]
   const value = raw != null ? Number(raw) : null
   const pct = value != null ? Math.min(100, Math.max(0, ((value - metric.min) / (metric.max - metric.min)) * 100)) : 0
-  const barColor = pct > 80 ? '#ef4444' : pct > 55 ? '#f59e0b' : metric.color
+  const barColor = pct > 80 ? '#a04030' : pct > 55 ? '#f59e0b' : metric.color
 
   const trend = getTrend(chartData, metric.key)
   const predText = value != null ? getPredText(trend, metric) : null
@@ -102,13 +102,13 @@ function MetricCard({ metric, data, chartData, isGlowing }) {
 
   return (
     <div
-      className="glass-card p-5 flex flex-col gap-2 transition-all duration-300"
-      style={isGlowing ? { borderColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 24px rgba(239,68,68,0.2)' } : {}}
+      className="glass-card p-6 flex flex-col gap-2 transition-all duration-300"
+      style={isGlowing ? { borderColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 24px rgba(160,64,48,0.35)' } : {}}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-center rounded-xl"
-             style={{ width: 38, height: 38, background: `rgba(${hexToRgb(metric.color)},0.12)`, color: metric.color, border: `1px solid rgba(${hexToRgb(metric.color)},0.2)` }}>
+             style={{ width: 42, height: 42, background: `rgba(${hexToRgb(metric.color)},0.14)`, color: metric.color, border: `1px solid rgba(${hexToRgb(metric.color)},0.25)` }}>
           {metric.icon}
         </div>
         <Sparkline values={sparkValues} color={metric.color} />
@@ -116,19 +116,19 @@ function MetricCard({ metric, data, chartData, isGlowing }) {
 
       {/* Label + trend arrow */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{metric.label}</span>
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{metric.label}</span>
           {value != null && (
-            <span className="text-xs font-bold" style={{ color: trend.dir === 'up' ? '#f59e0b' : trend.dir === 'down' ? '#60a5fa' : '#22c55e' }}>
+            <span className="text-xs font-bold" style={{ color: trend.dir === 'up' ? '#b8860b' : trend.dir === 'down' ? '#9ca3af' : '#4a8040' }}>
               {trend.dir === 'up' ? '↑' : trend.dir === 'down' ? '↓' : '→'}
             </span>
           )}
         </div>
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex items-baseline gap-2">
           {value != null ? (
             <AnimatedNumber value={value} decimals={metric.key === 'pressure' ? 0 : 1} color={metric.color} />
           ) : (
-            <span className="text-3xl font-bold" style={{ color: metric.color }}>—</span>
+            <span className="text-3xl font-bold" style={{ color: metric.color }}>-</span>
           )}
           <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{metric.unit}</span>
         </div>
@@ -136,21 +136,21 @@ function MetricCard({ metric, data, chartData, isGlowing }) {
 
       {/* Status text + mini prediction */}
       {value != null && (
-        <div className="text-xs space-y-0.5" style={{ color: 'var(--text-muted)' }}>
+        <div className="text-xs space-y-1 mt-1" style={{ color: 'var(--text-muted)' }}>
           <div>{trend.text}</div>
           {predText && (
-            <div style={{ color: trend.dir === 'up' ? '#fde68a' : '#93c5fd' }}>
-              ⏱ {predText}
+            <div style={{ color: trend.dir === 'up' ? '#b8860b' : 'rgba(255,255,255,0.7)' }}>
+              ETA {predText}
             </div>
           )}
         </div>
       )}
 
       {/* Progress bar */}
-      <div className="mt-auto pt-1">
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="mt-auto pt-2">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <div className="h-full rounded-full transition-all duration-700"
-               style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 8px ${barColor}88` }} />
+               style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 12px ${barColor}66` }} />
         </div>
       </div>
     </div>
@@ -175,3 +175,7 @@ export default function MetricGrid({ data, chartData, loading, alertMetric }) {
     </div>
   )
 }
+
+
+
+

@@ -2,6 +2,8 @@ import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
+from app.utils.security import hash_otp as hash_api_key
+
 from app.db.mongo import get_mongo_db
 from app.services.alert_service import trigger_alert
 
@@ -9,6 +11,8 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 
 class SensorData(BaseModel):
     device_id: str | None = None
+    api_key: str | None = None
+    timestamp: str | None = None
     temperature: float = 0.0
     humidity: float = 0.0
     pressure: float = 0.0
@@ -17,25 +21,58 @@ class SensorData(BaseModel):
     gas: float = 0.0
     risk_score: float = 0.0
     level: str | None = None
+    risk_level: str | None = None
+    risk_local: str | None = None
     anomaly: bool = False
+    anomaly_flag: bool = False
+    risk_reason: str | None = None
 
 @router.post("")
 async def post_data(data: SensorData, background_tasks: BackgroundTasks):
     db = get_mongo_db()
+    level = (data.level or data.risk_level or data.risk_local or "").upper()
+    anomaly_detected = bool(data.anomaly or data.anomaly_flag)
+    score = float(data.risk_score or 0)
+
+    # Best-effort user/device resolution for alert ownership and auth checks.
+    owner_user_id = None
+    if data.device_id:
+        device_doc = await db.devices.find_one({"device_id": data.device_id})
+        if device_doc:
+            owner_user_id = str(device_doc.get("user_id")) if device_doc.get("user_id") else None
+            if data.api_key and device_doc.get("api_key_hash"):
+                if hash_api_key(data.api_key) != device_doc.get("api_key_hash"):
+                    raise HTTPException(status_code=401, detail="Invalid device credentials")
+
     doc = data.dict()
-    doc["timestamp"] = datetime.datetime.utcnow().isoformat()
+    doc.pop("api_key", None)
+    doc["risk_score"] = score
+    doc["level"] = level or None
+    doc["anomaly"] = anomaly_detected
+    doc["timestamp"] = data.timestamp or datetime.datetime.utcnow().isoformat()
 
     await db.sensor_readings.insert_one(doc)
 
-    if data.risk_score > 65 or data.anomaly:
+    if score > 65 or anomaly_detected or level == "HIGH":
         reason = []
-        if data.risk_score > 65:
+        if score > 65:
             reason.append("High risk score detected")
-        if data.anomaly:
+        if level == "HIGH":
+            reason.append("High risk level reported")
+        if anomaly_detected:
             reason.append("Anomaly detected in sensor readings")
-        reason_str = " + ".join(reason)
-        # Assuming trigger_alert requires risk_score string or similar, but the original accepted risk_score float/int, string level, string reason.
-        background_tasks.add_task(trigger_alert, data.risk_score, data.level or "Medium", reason_str)
+        reason_str = data.risk_reason or " + ".join(reason)
+        reason_lower = str(reason_str).lower()
+        if (anomaly_detected or level == "HIGH") and ("stable" in reason_lower or "normal range" in reason_lower):
+            reason_str = "Anomaly detected in live sensor pattern. Please inspect device and surroundings."
+        background_tasks.add_task(
+            trigger_alert,
+            score,
+            level or "MEDIUM",
+            reason_str,
+            data.device_id,
+            owner_user_id,
+        )
 
     return {"status": "success", "message": "Data processed"}
 

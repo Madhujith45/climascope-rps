@@ -60,15 +60,20 @@ async def list_alerts(
         
         async for alert in cursor:
             # Get device name for better context
+            device_id = alert.get("device_id") or "unknown_device"
             device = await db.devices.find_one({
                 "user_id": user_id,
-                "device_id": alert["device_id"]
+                "device_id": device_id
             })
             
             alert_response = {
                 "id": str(alert["_id"]),
-                "device_id": alert["device_id"],
-                "device_name": device["device_name"] if device else "Unknown Device",
+                "device_id": device_id,
+                "device_name": (
+                    device["device_name"]
+                    if device
+                    else alert.get("device_name") or "Unknown Device"
+                ),
                 "message": alert["message"],
                 "severity": alert["severity"],
                 "alert_type": alert.get("alert_type"),

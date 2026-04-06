@@ -35,7 +35,7 @@ export default function AlertsPanel({ alerts, loading }) {
     return (
       <div className="space-y-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-800" />
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-800" />
         ))}
       </div>
     )
@@ -43,7 +43,7 @@ export default function AlertsPanel({ alerts, loading }) {
 
   if (!alerts || alerts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 py-10 text-slate-500">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-700 py-10 text-gray-500">
         <span className="text-3xl">✅</span>
         <p className="mt-2 text-sm">No alerts – system operating normally</p>
       </div>
@@ -69,7 +69,7 @@ export default function AlertsPanel({ alerts, loading }) {
               </span>
 
               {/* Score pill */}
-              <span className="rounded bg-slate-700/60 px-2 py-0.5 font-mono text-xs text-slate-300">
+              <span className="rounded bg-gray-700/60 px-2 py-0.5 font-mono text-xs text-gray-300">
                 Score: {alert.risk_score}
               </span>
 
@@ -81,7 +81,7 @@ export default function AlertsPanel({ alerts, loading }) {
               )}
 
               {/* Timestamp */}
-              <span className="ml-auto text-xs text-slate-500 shrink-0">
+              <span className="ml-auto text-xs text-gray-500 shrink-0">
                 {formatTimestamp(alert.timestamp)}
               </span>
             </div>
@@ -90,7 +90,7 @@ export default function AlertsPanel({ alerts, loading }) {
             {reasons.length > 0 && (
               <ul className="mt-1.5 space-y-0.5">
                 {reasons.map((r, i) => (
-                  <li key={i} className="text-xs text-slate-400 pl-4 relative before:absolute before:left-1 before:top-1.5 before:h-1 before:w-1 before:rounded-full before:bg-slate-600">
+                  <li key={i} className="text-xs text-gray-400 pl-4 relative before:absolute before:left-1 before:top-1.5 before:h-1 before:w-1 before:rounded-full before:bg-gray-600">
                     {r.trim()}
                   </li>
                 ))}
@@ -102,3 +102,4 @@ export default function AlertsPanel({ alerts, loading }) {
     </div>
   )
 }
+

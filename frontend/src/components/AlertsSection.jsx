@@ -1,13 +1,15 @@
 /**
- * ClimaScope – Alerts Section (card-based, premium)
+ * ClimaScope - Alerts Section (card-based, premium)
  */
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+const MAX_VISIBLE_ALERTS = 5
+
 const SEV = {
-  danger:  { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)',  strip: '#ef4444', label: 'Critical' },
-  warning: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', strip: '#f59e0b', label: 'Warning'  },
-  info:    { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)', strip: '#60a5fa', label: 'Info'     },
+  danger:  { color: '#a04030', bg: 'rgba(160,64,48,0.12)',  border: 'rgba(160,64,48,0.35)',  strip: '#a04030', label: 'Critical' },
+  warning: { color: '#b8860b', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)', strip: '#b8860b', label: 'Warning'  },
+  info:    { color: 'rgba(255,255,255,0.75)', bg: 'rgba(255,255,255,0.06)',  border: 'rgba(138, 128, 96, 0.2)', strip: 'rgba(255,255,255,0.7)', label: 'Info'     },
 }
 
 function timeAgo(ts) {
@@ -21,47 +23,86 @@ function timeAgo(ts) {
 }
 
 export default function AlertsSection() {
+  const REFRESH_MS = 10_000
   const [alerts,      setAlerts]      = useState([])
   const [loading,     setLoading]     = useState(true)
-  const [unread,      setUnread]      = useState(0)
+  const [showAll,     setShowAll]     = useState(false)
 
   useEffect(() => {
     const load = async () => {
       try {
         const token = getAuthToken()
-        const res = await fetch('/alerts/', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch('/alerts/?limit=100', { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) throw new Error()
         const d = await res.json()
         setAlerts(d.alerts || [])
-        setUnread(d.unread_count || 0)
       } catch { /* ignore */ }
       finally { setLoading(false) }
     }
 
     load()
 
-    const id = setInterval(load, 5000)
+    const id = setInterval(load, REFRESH_MS)
     return () => clearInterval(id)
-  }, [])
+  }, [REFRESH_MS])
 
-  const handleRead = async (id) => {
+  const activeGroupedAlerts = React.useMemo(() => {
+    const unresolved = alerts.filter((a) => !a.is_resolved)
+    const grouped = new Map()
+
+    unresolved.forEach((alert) => {
+      const key = `${alert.device_id || 'unknown'}|${alert.severity}|${alert.message}`
+      const current = grouped.get(key)
+      if (!current) {
+        grouped.set(key, {
+          ...alert,
+          ids: [alert.id],
+          count: 1,
+        })
+        return
+      }
+
+      current.ids.push(alert.id)
+      current.count += 1
+      if (new Date(alert.created_at).getTime() > new Date(current.created_at).getTime()) {
+        current.created_at = alert.created_at
+        current.id = alert.id
+      }
+      if (!alert.is_read) current.is_read = false
+    })
+
+    return Array.from(grouped.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+  }, [alerts])
+
+  const visibleAlerts = showAll
+    ? activeGroupedAlerts
+    : activeGroupedAlerts.slice(0, MAX_VISIBLE_ALERTS)
+
+  const hiddenCount = Math.max(0, activeGroupedAlerts.length - MAX_VISIBLE_ALERTS)
+  const activeUnread = alerts.filter((a) => !a.is_resolved && !a.is_read).length
+
+  const handleRead = async (ids) => {
     const token = getAuthToken()
-    await fetch(`/alerts/${id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_read: true } : a))
-    setUnread(p => Math.max(0, p - 1))
+    await Promise.all(ids.map((id) =>
+      fetch(`/alerts/${id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+    ))
+    setAlerts(prev => prev.map(a => ids.includes(a.id) ? { ...a, is_read: true } : a))
   }
 
-  const handleResolve = async (id) => {
+  const handleResolve = async (ids) => {
     const token = getAuthToken()
-    await fetch(`/alerts/${id}/resolve`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_resolved: true } : a))
+    await Promise.all(ids.map((id) =>
+      fetch(`/alerts/${id}/resolve`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+    ))
+    setAlerts(prev => prev.map(a => ids.includes(a.id) ? { ...a, is_resolved: true } : a))
   }
 
   const handleMarkAll = async () => {
     const token = getAuthToken()
     await fetch('/alerts/mark-all-read', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
     setAlerts(prev => prev.map(a => ({ ...a, is_read: true })))
-    setUnread(0)
   }
 
   return (
@@ -71,7 +112,7 @@ export default function AlertsSection() {
         <div className="flex items-center gap-3">
           <div
             className="flex items-center justify-center rounded-xl"
-            style={{ width: 36, height: 36, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
+            style={{ width: 36, height: 36, background: 'rgba(160,64,48,0.18)', border: '1px solid rgba(160,64,48,0.35)', color: '#a04030' }}
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -79,16 +120,19 @@ export default function AlertsSection() {
             </svg>
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">Active Alerts</div>
-            {unread > 0 && (
-              <div className="text-xs" style={{ color: '#ef4444' }}>{unread} unread</div>
+            <div className="text-sm font-semibold text-[var(--text-primary)]">Active Alerts</div>
+            {activeUnread > 0 && (
+              <div className="text-xs" style={{ color: '#a04030' }}>{activeUnread} unread</div>
             )}
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Shows unresolved risk events from connected devices.
+            </div>
           </div>
         </div>
-        {unread > 0 && (
+        {activeUnread > 0 && (
           <button
             className="text-xs font-medium transition-opacity hover:opacity-70"
-            style={{ color: '#60a5fa' }}
+            style={{ color: '#b8860b' }}
             onClick={handleMarkAll}
           >
             Mark all read
@@ -100,16 +144,16 @@ export default function AlertsSection() {
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {loading ? (
           [1,2,3].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)
-        ) : alerts.length === 0 ? (
+        ) : activeGroupedAlerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-8"
                style={{ color: 'var(--text-muted)' }}>
             <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="mb-3 opacity-40">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm">All clear — no active alerts</p>
+            <p className="text-sm">All clear - no active alerts</p>
           </div>
         ) : (
-          alerts.map(alert => {
+          visibleAlerts.map(alert => {
             const cfg = SEV[alert.severity] || SEV.info
             return (
               <div
@@ -144,10 +188,17 @@ export default function AlertsSection() {
                           />
                         )}
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          {alert.device_name}
+                          {String(alert.device_name || '').toLowerCase().includes('unknown')
+                            ? 'ClimaScope Pi'
+                            : alert.device_name}
                         </span>
                       </div>
-                      <p className="text-xs leading-relaxed text-white truncate">{alert.message}</p>
+                      <p className="text-xs leading-relaxed text-[var(--text-primary)] truncate">{alert.message}</p>
+                      {alert.count > 1 && (
+                        <p className="text-[11px] mt-1" style={{ color: cfg.color }}>
+                          Repeated {alert.count} times
+                        </p>
+                      )}
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                         {timeAgo(alert.created_at)}
                       </p>
@@ -157,8 +208,8 @@ export default function AlertsSection() {
                       {!alert.is_read && (
                         <button
                           className="text-xs hover:opacity-70 transition-opacity"
-                          style={{ color: '#60a5fa' }}
-                          onClick={() => handleRead(alert.id)}
+                          style={{ color: '#b8860b' }}
+                          onClick={() => handleRead(alert.ids || [alert.id])}
                         >
                           Read
                         </button>
@@ -166,8 +217,8 @@ export default function AlertsSection() {
                       {!alert.is_resolved && (
                         <button
                           className="text-xs hover:opacity-70 transition-opacity"
-                          style={{ color: '#22c55e' }}
-                          onClick={() => handleResolve(alert.id)}
+                          style={{ color: '#4a8040' }}
+                          onClick={() => handleResolve(alert.ids || [alert.id])}
                         >
                           Resolve
                         </button>
@@ -180,6 +231,20 @@ export default function AlertsSection() {
           })
         )}
       </div>
+
+      {!loading && hiddenCount > 0 && (
+        <button
+          className="mt-3 text-xs font-medium self-start hover:opacity-80"
+          style={{ color: '#b8860b' }}
+          onClick={() => setShowAll((prev) => !prev)}
+        >
+          {showAll ? 'Show fewer alerts' : `Show ${hiddenCount} more alerts`}
+        </button>
+      )}
     </div>
   )
 }
+
+
+
+

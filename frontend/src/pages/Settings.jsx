@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { getCurrentUser, getAuthToken } from '../services/auth'
 import toast from 'react-hot-toast'
@@ -122,7 +122,7 @@ export default function Settings() {
   }
 
   if (fetching) {
-    return <div className="p-8 text-slate-400">Loading settings...</div>        
+    return <div className="p-8 text-gray-400">Loading settings...</div>        
   }
 
   return (
@@ -133,7 +133,7 @@ export default function Settings() {
         <form onSubmit={handleSave} className="flex flex-col gap-6">
 
           <div className="flex flex-col gap-5">
-            <h3 className="text-sm font-semibold border-b border-gray-800 pb-2 text-teal-400">Profile Information</h3>
+            <h3 className="text-sm font-semibold border-b border-gray-800 pb-2 text-yellow-300">Profile Information</h3>
 
             <div>
               <label className="block text-xs font-semibold mb-1.5 text-gray-400">Full Name</label>
@@ -141,7 +141,7 @@ export default function Settings() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="auth-input bg-opacity-20 bg-slate-800"
+                className="auth-input bg-opacity-20 bg-gray-800"
               />
             </div>
 
@@ -159,11 +159,11 @@ export default function Settings() {
           </div>
 
           <div className="flex flex-col gap-5 mt-2">
-            <h3 className="text-sm font-semibold border-b border-gray-800 pb-2 text-teal-400">Alert Preferences</h3>
+            <h3 className="text-sm font-semibold border-b border-gray-800 pb-2 text-yellow-300">Alert Preferences</h3>
 
-            <div className="flex items-center justify-between bg-slate-800/40 p-4 rounded-xl border border-white/5">
+            <div className="flex items-center justify-between bg-gray-800/40 p-4 rounded-xl border border-white/5">
               <div>
-                <div className="text-sm font-medium text-white">Enable Alerts</div>
+                <div className="text-sm font-medium text-[var(--text-primary)]">Enable Alerts</div>
                 <div className="text-xs text-gray-400 mt-0.5">Receive notifications for anomalies or high risk scores.</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -173,7 +173,7 @@ export default function Settings() {
                   checked={alertsEnabled}
                   onChange={e => setAlertsEnabled(e.target.checked)}
                 />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
               </label>
             </div>
 
@@ -183,7 +183,7 @@ export default function Settings() {
                 value={alertMode}
                 onChange={e => setAlertMode(e.target.value)}
                 disabled={!alertsEnabled}
-                className="auth-input bg-opacity-20 bg-slate-800 w-full"        
+                className="auth-input bg-opacity-20 bg-gray-800 w-full"        
               >
                 <option value="email">Email Only</option>
                 <option value="sms">SMS Only</option>
@@ -199,7 +199,7 @@ export default function Settings() {
                   value={countryCode}
                   onChange={e => setCountryCode(e.target.value)}
                   disabled={!alertsEnabled}
-                  className="auth-input bg-opacity-20 bg-slate-800 w-32"
+                  className="auth-input bg-opacity-20 bg-gray-800 w-32"
                 >
                   <option value="+1">+1 (US)</option>
                   <option value="+44">+44 (UK)</option>
@@ -212,7 +212,7 @@ export default function Settings() {
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   disabled={!alertsEnabled}
-                  className="auth-input bg-opacity-20 bg-slate-800 flex-1"
+                  className="auth-input bg-opacity-20 bg-gray-800 flex-1"
                 />
               </div>
 
@@ -233,3 +233,5 @@ export default function Settings() {
     </div>
   )
 }
+
+

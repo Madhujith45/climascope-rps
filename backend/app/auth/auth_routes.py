@@ -10,6 +10,11 @@ from typing import Optional
 import logging
 from datetime import datetime
 from bson import ObjectId
+import os
+import re
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from .jwt_handler import create_access_token, verify_token, hash_password, verify_password
 from ..db.mongo import get_mongo_db
@@ -23,6 +28,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
 
+
+def _normalize_email(value: str) -> str:
+    return value.strip().lower()
+
+
+def _phone_digits(value: str) -> str:
+    return "".join(ch for ch in str(value) if ch.isdigit())
+
+
+def _normalize_phone(value: str) -> str:
+    digits = _phone_digits(value)
+    return f"+{digits}" if digits else ""
+
 # ── Pydantic models ──────────────────────────────────────────────────────
 
 class UserSignup(BaseModel):
@@ -32,8 +50,11 @@ class UserSignup(BaseModel):
     phone: Optional[str] = Field(None, description="Optional phone number for SMS alerts")
 
 class UserLogin(BaseModel):
-    email: EmailStr = Field(..., description="User email address")
+    identifier: str = Field(..., description="User email address or phone number")
     password: str = Field(..., description="User password")
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str = Field(..., description="Google ID token from client sign-in")
 
 class TokenResponse(BaseModel):
     access_token: str = Field(..., description="JWT access token")
@@ -117,20 +138,51 @@ async def signup(user_data: UserSignup):
     try:
         db = get_mongo_db()
         
-        # Check if user already exists
-        existing_user = await db.users.find_one({"email": user_data.email})
+        email_norm = _normalize_email(str(user_data.email))
+
+        # Check if user already exists (case-insensitive across legacy/new docs)
+        existing_user = await db.users.find_one({
+            "$or": [
+                {"email_lower": email_norm},
+                {"email": email_norm},
+                {"email": {"$regex": f"^{re.escape(email_norm)}$", "$options": "i"}},
+            ]
+        })
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
+
+        phone_norm = None
+        phone_digits = None
+        if user_data.phone:
+            phone_norm = _normalize_phone(user_data.phone)
+            phone_digits = _phone_digits(user_data.phone)
+            if not phone_digits:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid phone number"
+                )
+
+            existing_phone = await db.users.find_one({
+                "$or": [
+                    {"phone": phone_norm},
+                    {"phone_digits": phone_digits},
+                ]
+            })
+            if existing_phone:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number already registered"
+                )
         
         # Create new user
         user_create = UserCreate(
-            email=user_data.email,
+            email=email_norm,
             password=user_data.password,
             full_name=user_data.full_name,
-            phone=user_data.phone if hasattr(user_data, "phone") else None,
+            phone=phone_norm,
             alert_mode=user_data.alert_mode if hasattr(user_data, "alert_mode") else "email",
             alerts_enabled=user_data.alerts_enabled if hasattr(user_data, "alerts_enabled") else True
         )
@@ -141,9 +193,11 @@ async def signup(user_data: UserSignup):
         # Prepare user document
         user_doc = {
             "email": user_create.email,
+            "email_lower": email_norm,
             "password": hashed_password,
             "full_name": user_create.full_name,
             "phone": user_create.phone,
+            "phone_digits": phone_digits,
             "alert_mode": user_create.alert_mode,
             "alerts_enabled": user_create.alerts_enabled,
             "created_at": datetime.utcnow(),
@@ -191,21 +245,82 @@ async def login(user_credentials: UserLogin, request: Request):
     try:
         db = get_mongo_db()
         
-        # Find user by email
-        user = await db.users.find_one({"email": user_credentials.email})
+        identifier = user_credentials.identifier.strip()
+        if not identifier:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email/phone or password"
+            )
+
+        query_conditions = []
+        if "@" in identifier:
+            email_norm = _normalize_email(identifier)
+            query_conditions.extend([
+                {"email_lower": email_norm},
+                {"email": email_norm},
+                {"email": {"$regex": f"^{re.escape(email_norm)}$", "$options": "i"}},
+            ])
+        else:
+            phone_norm = _normalize_phone(identifier)
+            digits = _phone_digits(identifier)
+            if digits:
+                query_conditions.extend([
+                    {"phone_digits": digits},
+                    {"phone": phone_norm},
+                    {"phone": identifier},
+                ])
+
+        if not query_conditions:
+            query_conditions.append({"email": identifier})
+
+        user = await db.users.find_one({"$or": query_conditions})
+
+        # Fallback: user entered local mobile number without country code.
+        # Only accept if it maps to exactly one account to avoid ambiguity.
+        if not user and "@" not in identifier:
+            digits = _phone_digits(identifier)
+            if len(digits) >= 7:
+                suffix_matches = await db.users.find(
+                    {
+                        "$or": [
+                            {"phone_digits": {"$regex": f"{re.escape(digits)}$"}},
+                            {"phone": {"$regex": f"{re.escape(digits)}$"}},
+                        ]
+                    }
+                ).to_list(length=2)
+                if len(suffix_matches) == 1:
+                    user = suffix_matches[0]
         
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
+                detail="Invalid email/phone or password"
             )
         
         # Verify password
-        if not verify_password(user_credentials.password, user["password"]):
+        stored_password = user.get("password")
+        if not stored_password:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
+                detail="This account uses Google sign-in. Continue with Google."
             )
+
+        if not verify_password(user_credentials.password, stored_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email/phone or password"
+            )
+
+        # Keep legacy user documents aligned for reliable future lookups.
+        backfill_updates = {}
+        if user.get("email") and not user.get("email_lower"):
+            backfill_updates["email_lower"] = _normalize_email(user.get("email"))
+        if user.get("phone") and not user.get("phone_digits"):
+            digits = _phone_digits(user.get("phone"))
+            if digits:
+                backfill_updates["phone_digits"] = digits
+        if backfill_updates:
+            await db.users.update_one({"_id": user["_id"]}, {"$set": backfill_updates})
         
         # Check if user is active
         if not user.get("is_active", True):
@@ -232,7 +347,7 @@ async def login(user_credentials: UserLogin, request: Request):
             "role": user.get("role", "user")
         }
         
-        logger.info(f"User logged in: {user_credentials.email}")
+        logger.info(f"User logged in: {identifier}")
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -246,6 +361,104 @@ async def login(user_credentials: UserLogin, request: Request):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Login failed"
+        )
+
+
+@router.post("/google-login", response_model=TokenResponse)
+async def google_login(payload: GoogleLoginRequest):
+    """
+    Authenticate with Google ID token.
+    Creates user if it does not exist.
+    """
+    try:
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Google login is not configured on server"
+            )
+
+        idinfo = id_token.verify_oauth2_token(
+            payload.id_token,
+            google_requests.Request(),
+            client_id,
+        )
+
+        email = idinfo.get("email")
+        email_verified = idinfo.get("email_verified", False)
+        if not email or not email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Google account email is not verified"
+            )
+
+        db = get_mongo_db()
+        user = await db.users.find_one({"email": email})
+
+        if not user:
+            now = datetime.utcnow()
+            user_doc = {
+                "email": email,
+                "full_name": idinfo.get("name"),
+                "phone": None,
+                "created_at": now,
+                "updated_at": now,
+                "is_active": True,
+                "role": "user",
+                "auth_provider": "google",
+                "google_sub": idinfo.get("sub"),
+            }
+            result = await db.users.insert_one(user_doc)
+            user = {**user_doc, "_id": result.inserted_id}
+        else:
+            updates = {
+                "updated_at": datetime.utcnow(),
+                "auth_provider": user.get("auth_provider") or "google",
+            }
+            if not user.get("google_sub") and idinfo.get("sub"):
+                updates["google_sub"] = idinfo.get("sub")
+            await db.users.update_one({"_id": user["_id"]}, {"$set": updates})
+            user.update(updates)
+
+        if not user.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account is deactivated"
+            )
+
+        token_data = {
+            "sub": str(user["_id"]),
+            "email": user["email"],
+            "full_name": user.get("full_name"),
+            "role": user.get("role", "user"),
+        }
+        access_token = create_access_token(token_data)
+
+        user_info = {
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "full_name": user.get("full_name"),
+            "role": user.get("role", "user"),
+        }
+
+        logger.info("User logged in with Google: %s", email)
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user_info,
+        }
+    except HTTPException:
+        raise
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token"
+        )
+    except Exception as e:
+        logger.error(f"Google login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google login failed"
         )
 
 

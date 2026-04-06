@@ -1,13 +1,13 @@
 /**
- * ClimaScope – Risk Timeline
+ * ClimaScope - Risk Timeline
  * Past risk → Current risk → Predicted risk
  */
 import React, { useMemo } from 'react'
 
 function getRiskLevel(score) {
-  if (score >= 80) return { label: 'Low',    color: '#22c55e', pct: 20  }
+  if (score >= 80) return { label: 'Low',    color: '#4a8040', pct: 20  }
   if (score >= 50) return { label: 'Medium', color: '#f59e0b', pct: 55  }
-  return               { label: 'High',    color: '#ef4444', pct: 90  }
+  return               { label: 'High',    color: '#a04030', pct: 90  }
 }
 
 export default function RiskTimeline({ prediction, chartData, loading }) {
@@ -98,3 +98,5 @@ export default function RiskTimeline({ prediction, chartData, loading }) {
     </div>
   )
 }
+
+

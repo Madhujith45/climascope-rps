@@ -1,5 +1,5 @@
 /**
- * ClimaScope – Device Status Panel
+ * ClimaScope - Device Status Panel
  */
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
@@ -12,10 +12,10 @@ function DeviceCard({ device, isSelected, onSelect }) {
       className="w-full text-left rounded-xl px-4 py-3 transition-all"
       style={{
         background: isSelected
-          ? 'linear-gradient(135deg, rgba(20,184,166,0.15), rgba(59,130,246,0.10))'
+          ? 'linear-gradient(135deg, rgba(200,168,64,0.12), rgba(200,168,64,0.05)), rgba(30, 35, 20, 0.65)'
           : 'rgba(255,255,255,0.03)',
         border: isSelected
-          ? '1px solid rgba(20,184,166,0.3)'
+          ? '1px solid rgba(200,168,64,0.4)'
           : '1px solid rgba(255,255,255,0.05)',
       }}
     >
@@ -26,9 +26,9 @@ function DeviceCard({ device, isSelected, onSelect }) {
             className="flex items-center justify-center rounded-lg"
             style={{
               width: 34, height: 34,
-              background: online ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)',
+              background: online ? 'rgba(34,197,94,0.1)' : 'rgba(160,64,48,0.12)',
               border: `1px solid ${online ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.15)'}`,
-              color: online ? '#22c55e' : '#ef4444',
+              color: online ? '#4a8040' : '#a04030',
             }}
           >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -40,7 +40,7 @@ function DeviceCard({ device, isSelected, onSelect }) {
           </div>
 
           <div>
-            <div className="text-sm font-medium text-white leading-none mb-0.5">
+            <div className="text-sm font-medium text-[var(--text-primary)] leading-none mb-0.5">
               {device.device_name || device.device_id}
             </div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -54,11 +54,11 @@ function DeviceCard({ device, isSelected, onSelect }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{
-                background: online ? '#22c55e' : '#ef4444',
-                boxShadow: online ? '0 0 6px #22c55e' : 'none',
+                background: online ? '#4a8040' : '#a04030',
+                boxShadow: online ? '0 0 6px #4a8040' : 'none',
               }}
             />
-            <span className="text-xs font-medium" style={{ color: online ? '#22c55e' : '#ef4444' }}>
+            <span className="text-xs font-medium" style={{ color: online ? '#4a8040' : '#a04030' }}>
               {online ? 'Online' : 'Offline'}
             </span>
           </div>
@@ -96,7 +96,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
       <div className="flex items-center gap-3 mb-5">
         <div
           className="flex items-center justify-center rounded-xl"
-          style={{ width: 36, height: 36, background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60a5fa' }}
+          style={{ width: 36, height: 36, background: 'rgba(200,168,64,0.12)', border: '1px solid rgba(200,168,64,0.4)', color: '#b8860b' }}
         >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <rect x="2" y="7" width="20" height="14" rx="2" />
@@ -104,7 +104,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
           </svg>
         </div>
         <div>
-          <div className="text-sm font-semibold text-white">Connected Devices</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)]">Connected Devices</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {devices.filter(d => d.is_active !== false).length} online
           </div>
@@ -137,3 +137,8 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
     </div>
   )
 }
+
+
+
+
+

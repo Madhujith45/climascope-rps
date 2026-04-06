@@ -1,17 +1,17 @@
 /**
- * ClimaScope – Environmental Stability Score (Centerpiece)
+ * ClimaScope - Environmental Stability Score (Centerpiece)
  * Circular progress + dynamic explanation + color animation
  */
 import React, { useMemo } from 'react'
 
 function getLabel(score) {
-  if (score >= 80) return { text: 'Stable',            color: '#22c55e', glow: 'rgba(34,197,94,0.2)' }
-  if (score >= 50) return { text: 'Slightly Unstable', color: '#f59e0b', glow: 'rgba(245,158,11,0.2)' }
-  return               { text: 'Critical',             color: '#ef4444', glow: 'rgba(239,68,68,0.2)' }
+  if (score >= 80) return { text: 'Stable',            color: '#4a8040', glow: 'rgba(34,197,94,0.2)' }
+  if (score >= 50) return { text: 'Slightly Unstable', color: '#9a6f08', glow: 'rgba(184,134,11,0.25)' }
+  return               { text: 'Critical',             color: '#a04030', glow: 'rgba(160,64,48,0.35)' }
 }
 
 function getExplanation(score, prediction, data) {
-  if (!data || !prediction) return 'Analyzing environmental conditions…'
+  if (!data || !prediction) return 'Analyzing environmental conditions...'
   const temp = Number(data.temperature)
   const gas  = Number(data.gas_ppm)
 
@@ -23,11 +23,11 @@ function getExplanation(score, prediction, data) {
     return `Stable because ${reasons.join(', ')}.`
   }
   if (score >= 50) {
-    if (!isNaN(temp) && temp > 32) return `Slightly unstable — temperature at ${temp.toFixed(1)}°C is above comfort zone.`
-    if (!isNaN(gas) && gas > 150) return `Slightly unstable — gas levels at ${gas.toFixed(0)} ppm approaching threshold.`
+    if (!isNaN(temp) && temp > 32) return `Slightly unstable - temperature at ${temp.toFixed(1)}°C is above comfort zone.`
+    if (!isNaN(gas) && gas > 150) return `Slightly unstable - gas levels at ${gas.toFixed(0)} ppm approaching threshold.`
     return 'Some parameters are approaching warning thresholds.'
   }
-  return 'Critical — multiple environmental parameters exceed safe limits. Immediate attention required.'
+  return 'Critical - multiple environmental parameters exceed safe limits. Immediate attention required.'
 }
 
 export default function StabilityScore({ prediction, data, loading }) {
@@ -51,48 +51,68 @@ export default function StabilityScore({ prediction, data, loading }) {
 
   return (
     <div
-      className="glass-card-static p-6 h-full flex flex-col items-center justify-center gap-2"
-      style={{ boxShadow: `0 0 40px ${glow}`, borderColor: `${color}22` }}
+      className="glass-card-static p-7 h-full flex flex-col items-center justify-center gap-3"
+      style={{ boxShadow: `0 0 40px ${glow}`, borderColor: `${color}22`, background: `radial-gradient(ellipse at center, ${glow} 0%, transparent 70%), var(--bg-card)` }}
     >
-      <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+      <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>
         Stability Score
+      </div>
+      <div className="text-sm -mt-2" style={{ color: 'var(--text-muted)' }}>
+        Environmental health
       </div>
 
       {/* Circular Progress Ring */}
-      <div className="relative flex items-center justify-center my-2" style={{ width: 140, height: 140 }}>
+      <div className="relative flex items-center justify-center my-2" style={{ width: 150, height: 150 }}>
         {/* Outer glow pulse */}
         <div className="absolute inset-0 rounded-full" style={{
-          background: `radial-gradient(circle, ${color}11 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
           animation: 'pulse-dot 3s ease-in-out infinite',
         }} />
-        <svg width="140" height="140" viewBox="0 0 140 140">
-          <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-          <circle cx="70" cy="70" r={R} fill="none" stroke={color} strokeWidth="10"
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="11" />
+          <circle cx="75" cy="75" r={R} fill="none" stroke={color} strokeWidth="11"
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={offset}
             style={{
               transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.4s ease',
               transform: 'rotate(-90deg)', transformOrigin: '50% 50%',
-              filter: `drop-shadow(0 0 10px ${color}aa)`,
+              filter: `drop-shadow(0 0 12px ${color}dd)`,
             }}
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <span className="text-4xl font-bold metric-value" style={{ color, lineHeight: 1 }}>
+          <span className="text-5xl font-bold metric-value" style={{ color, lineHeight: 1 }}>
             {Math.round(score)}
           </span>
-          <span className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>/100</span>
+          <span className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>/100</span>
         </div>
       </div>
 
-      <div className="font-semibold text-lg" style={{ color }}>{text}</div>
+      <div className="font-semibold text-lg text-center" style={{ color }}>{text}</div>
 
-      {/* Explanation */}
-      <p className="text-xs text-center leading-relaxed"
-         style={{ color: 'var(--text-secondary)', maxWidth: 220 }}>
-        {explanation}
-      </p>
+      <div className="grid grid-cols-3 gap-2 w-full mt-2">
+        {[
+          { title: 'TEMPERATURE', value: score >= 80 ? 'Optimal' : score >= 50 ? 'Watch' : 'Critical' },
+          { title: 'HUMIDITY', value: score >= 80 ? 'Balanced' : score >= 50 ? 'Moderate' : 'Unstable' },
+          { title: 'AIR QUALITY', value: score >= 80 ? 'Clean' : score >= 50 ? 'Elevated' : 'Hazard' },
+        ].map((tag) => (
+          <div
+            key={tag.title}
+            className="rounded-2xl px-3 py-2 text-center"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <div className="text-xs font-semibold tracking-wider" style={{ color: 'var(--text-muted)' }}>{tag.title}</div>
+            <div className="text-xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>{tag.value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
+
+
+

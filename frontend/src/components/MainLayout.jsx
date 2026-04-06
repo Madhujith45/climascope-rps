@@ -18,21 +18,27 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      {/* ── Left Sidebar ───────────────────────────────────────── */}
-      <Sidebar selectedDevice={selectedDevice} onDeviceChange={setSelectedDevice} />
+    <div className="app-shell">
+      <div className="app-bg-image" />
+      <div className="app-bg-vignette" />
 
-      {/* ── Main Area ──────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-        <Topbar user={user} secondsAgo={null} onLogout={handleLogout} />
+      <div className="relative z-10 flex h-full overflow-hidden">
+        {/* ── Left Sidebar ───────────────────────────────────────── */}
+        <Sidebar selectedDevice={selectedDevice} onDeviceChange={setSelectedDevice} />
 
-        {/* ── Scrollable Content ─────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto page-in relative" style={{ padding: '24px 28px 40px' }}>
-          <Outlet context={{ selectedDevice, user }} />
-        </main>
+        {/* ── Main Area ──────────────────────────────────────────── */}
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative px-4 md:px-6 pt-4">
+          <Topbar user={user} secondsAgo={null} onLogout={handleLogout} />
 
-        <FloatingChatbot selectedDevice={selectedDevice} />
+          {/* ── Scrollable Content ─────────────────────────────────── */}
+          <main className="flex-1 overflow-y-auto page-in relative" style={{ padding: '18px 4px 42px' }}>
+            <Outlet context={{ selectedDevice, user }} />
+          </main>
+
+          <FloatingChatbot selectedDevice={selectedDevice} />
+        </div>
       </div>
     </div>
   )
 }
+

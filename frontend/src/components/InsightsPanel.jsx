@@ -1,5 +1,5 @@
 /**
- * ClimaScope – AI Insights Panel
+ * ClimaScope - AI Insights Panel
  * Human-readable summarized intelligence
  */
 import React from 'react'
@@ -14,27 +14,27 @@ function getInsights(prediction, data) {
 
   if (temp != null) {
     const t = Number(temp)
-    if (t > 32)      items.push({ icon: '🌡️', text: 'Temperature elevated — consider ventilation.', severity: 'warn' })
-    else if (t < 16) items.push({ icon: '❄️', text: 'Temperature is low — check heating conditions.', severity: 'info' })
-    else             items.push({ icon: '✅', text: `Temperature ${t.toFixed(1)}°C is within optimal range.`, severity: 'safe' })
+    if (t > 32)      items.push({ icon: 'HOT', text: 'Temperature elevated - consider ventilation.', severity: 'warn' })
+    else if (t < 16) items.push({ icon: 'COLD', text: 'Temperature is low - check heating conditions.', severity: 'info' })
+    else             items.push({ icon: 'OK', text: `Temperature ${t.toFixed(1)}°C is within optimal range.`, severity: 'safe' })
   }
 
   if (humidity != null) {
     const h = Number(humidity)
-    if (h > 80)      items.push({ icon: '💧', text: 'Humidity very high — risk of condensation.', severity: 'warn' })
-    else if (h < 30) items.push({ icon: '🏜️', text: 'Air is dry — consider adding moisture.', severity: 'info' })
-    else             items.push({ icon: '✅', text: `Humidity ${h.toFixed(0)}% is comfortable.`, severity: 'safe' })
+    if (h > 80)      items.push({ icon: 'HUMID', text: 'Humidity very high - risk of condensation.', severity: 'warn' })
+    else if (h < 30) items.push({ icon: 'DRY', text: 'Air is dry - consider adding moisture.', severity: 'info' })
+    else             items.push({ icon: 'OK', text: `Humidity ${h.toFixed(0)}% is comfortable.`, severity: 'safe' })
   }
 
   if (gasPpm != null) {
     const g = Number(gasPpm)
-    if (g > 300)     items.push({ icon: '⚠️', text: 'Gas levels rising — ensure proper ventilation.', severity: 'danger' })
-    else if (g > 150) items.push({ icon: '🔍', text: 'Gas slightly above baseline. Monitor closely.', severity: 'warn' })
-    else             items.push({ icon: '✅', text: 'Air quality is clean. Gas levels nominal.', severity: 'safe' })
+    if (g > 300)     items.push({ icon: 'WARNING', text: 'Gas levels rising - ensure proper ventilation.', severity: 'danger' })
+    else if (g > 150) items.push({ icon: 'INFO', text: 'Gas slightly above baseline. Monitor closely.', severity: 'warn' })
+    else             items.push({ icon: 'OK', text: 'Air quality is clean. Gas levels nominal.', severity: 'safe' })
   }
 
   if (prediction.anomaly) {
-    items.unshift({ icon: '🤖', text: 'ML model detected an anomaly in sensor pattern.', severity: 'danger' })
+    items.unshift({ icon: 'AI', text: 'ML model detected an anomaly in sensor pattern.', severity: 'danger' })
   }
 
   return items.slice(0, 5)
@@ -43,7 +43,7 @@ function getInsights(prediction, data) {
 const SEV_COLORS = {
   safe:   { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.2)',  text: '#86efac' },
   warn:   { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', text: '#fde68a' },
-  danger: { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)',  text: '#fca5a5' },
+  danger: { bg: 'rgba(160,64,48,0.12)',  border: 'rgba(160,64,48,0.35)',  text: '#e8b0a6' },
   info:   { bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', text: '#bfdbfe' },
 }
 
@@ -59,7 +59,7 @@ export default function InsightsPanel({ prediction, data, loading }) {
             width: 36, height: 36,
             background: 'rgba(20,184,166,0.12)',
             border: '1px solid rgba(20,184,166,0.2)',
-            color: '#2dd4bf',
+            color: '#4a8040',
           }}
         >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -67,7 +67,7 @@ export default function InsightsPanel({ prediction, data, loading }) {
           </svg>
         </div>
         <div>
-          <div className="text-sm font-semibold text-white">AI Insights</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)]">AI Insights</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Human-readable analysis</div>
         </div>
       </div>
@@ -77,8 +77,8 @@ export default function InsightsPanel({ prediction, data, loading }) {
           [1,2,3].map(i => <div key={i} className="skeleton h-12 rounded-xl" />)
         ) : insights.length === 0 ? (
           <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-            <div className="text-2xl mb-2">🔍</div>
-            <div className="text-sm">Awaiting sensor data…</div>
+            <div className="text-2xl mb-2">INFO</div>
+            <div className="text-sm">Awaiting sensor data...</div>
           </div>
         ) : insights.map((item, i) => {
           const c = SEV_COLORS[item.severity] || SEV_COLORS.info
@@ -103,3 +103,6 @@ export default function InsightsPanel({ prediction, data, loading }) {
     </div>
   )
 }
+
+
+

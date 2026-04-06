@@ -1,5 +1,5 @@
 /**
- * ClimaScope – AI Decision Box
+ * ClimaScope - AI Decision Box
  * Dynamic intelligence bar: recommendation + confidence + trend direction
  */
 import React, { useEffect, useState } from 'react'
@@ -18,7 +18,7 @@ function getTrend(chartData, key) {
 }
 
 function getDecision(prediction, data, chartData) {
-  if (!prediction || !data) return { text: 'Connecting to AI system…', severity: 'info', why: '' }
+  if (!prediction || !data) return { text: 'Connecting to AI system...', severity: 'info', why: '' }
 
   const gasTrend  = getTrend(chartData, 'gas_ppm')
   const tempTrend = getTrend(chartData, 'temperature')
@@ -31,14 +31,14 @@ function getDecision(prediction, data, chartData) {
       : tempTrend.dir === 'rising'
       ? `Temperature rose by ${Math.abs(tempTrend.delta).toFixed(1)}°C recently.`
       : 'Multiple sensor values deviate from the learned baseline.'
-    return { text: 'Anomaly detected — review environmental conditions immediately.', severity: 'danger', why }
+    return { text: 'Anomaly detected - review environmental conditions immediately.', severity: 'danger', why }
   }
 
   if (prediction.status === 'danger') {
     return {
       text: 'Critical conditions detected. Consider evacuation or ventilation.',
       severity: 'danger',
-      why: `Temperature: ${temp.toFixed(1)}°C, Gas: ${gas.toFixed(0)} ppm — both exceed safe thresholds.`,
+      why: `Temperature: ${temp.toFixed(1)}°C, Gas: ${gas.toFixed(0)} ppm - both exceed safe thresholds.`,
     }
   }
 
@@ -56,7 +56,7 @@ function getDecision(prediction, data, chartData) {
     return {
       text: 'Temperature elevated, otherwise stable. Monitor for changes.',
       severity: 'warning',
-      why: `Temperature at ${temp.toFixed(1)}°C — above comfortable range.`,
+      why: `Temperature at ${temp.toFixed(1)}°C - above comfortable range.`,
     }
   }
 
@@ -68,16 +68,16 @@ function getDecision(prediction, data, chartData) {
 }
 
 const ARROW = {
-  rising:  { icon: '↑', label: 'Rising',  color: '#f59e0b' },
-  falling: { icon: '↓', label: 'Falling', color: '#60a5fa' },
-  stable:  { icon: '→', label: 'Stable',  color: '#22c55e' },
+  rising:  { icon: '↑', label: 'Rising',  color: '#b8860b' },
+  falling: { icon: '↓', label: 'Falling', color: '#9ca3af' },
+  stable:  { icon: '→', label: 'Stable',  color: '#4a8040' },
 }
 
 const SEV_STYLE = {
-  safe:    { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.2)',  glow: '0 0 30px rgba(34,197,94,0.12)',  icon: '✅', color: '#86efac' },
-  warning: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', glow: '0 0 30px rgba(245,158,11,0.12)', icon: '⚠️', color: '#fde68a' },
-  danger:  { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)',  glow: '0 0 30px rgba(239,68,68,0.12)',  icon: '🚨', color: '#fca5a5' },
-  info:    { bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', glow: '0 0 30px rgba(96,165,250,0.12)', icon: '🤖', color: '#bfdbfe' },
+  safe:    { bg: 'rgba(34, 197, 94, 0.12)',  border: 'rgba(34,197,94,0.4)',  glow: '0 0 30px rgba(200,168,64,0.18)',  icon: 'OK', color: '#4a8040' },
+  warning: { bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)', glow: '0 0 30px rgba(251,146,60,0.15)', icon: 'WARNING', color: '#fdba74' },
+  danger:  { bg: 'rgba(160,64,48,0.12)',  border: 'rgba(160,64,48,0.35)',  glow: '0 0 30px rgba(239,68,68,0.12)',  icon: 'ALERT', color: '#e8b0a6' },
+  info:    { bg: 'rgba(255,255,255,0.06)', border: 'rgba(138, 128, 96, 0.2)', glow: '0 0 30px rgba(200,168,64,0.18)', icon: 'AI', color: 'rgba(255,255,255,0.75)' },
 }
 
 export default function AIDecisionBox({ prediction, data, chartData, loading }) {
@@ -118,7 +118,7 @@ export default function AIDecisionBox({ prediction, data, chartData, loading }) 
         {/* Confidence */}
         {confidence != null && (
           <div className="flex items-center gap-1.5 text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
-            <span className="font-medium" style={{ color: confidence >= 0.8 ? '#86efac' : confidence >= 0.6 ? '#fde68a' : '#fca5a5' }}>
+            <span className="font-medium" style={{ color: confidence >= 0.8 ? '#86efac' : confidence >= 0.6 ? '#fde68a' : '#e8b0a6' }}>
               {Math.round(confidence * 100)}%
             </span>
             confidence
@@ -130,7 +130,7 @@ export default function AIDecisionBox({ prediction, data, chartData, loading }) 
           <button
             onClick={() => setShowWhy(!showWhy)}
             className="text-xs font-medium rounded-lg px-2 py-1 transition-opacity hover:opacity-70"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
           >
             {showWhy ? 'Hide' : 'Why?'}
           </button>
@@ -143,9 +143,14 @@ export default function AIDecisionBox({ prediction, data, chartData, loading }) 
           className="mt-3 pt-3 text-xs leading-relaxed"
           style={{ borderTop: `1px solid ${s.border}`, color: 'var(--text-secondary)' }}
         >
-          💡 {why}
+          Insight: {why}
         </div>
       )}
     </div>
   )
 }
+
+
+
+
+

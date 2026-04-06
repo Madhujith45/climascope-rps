@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ClimaScope - Alert Panel Component
  * Displays real-time alerts with management capabilities
  */
@@ -136,7 +136,7 @@ function AlertPanel({ className = "" }) {
       case 'warning':
         return 'text-yellow-400 bg-yellow-950/30 border-yellow-800/50'
       default:
-        return 'text-blue-400 bg-blue-950/30 border-blue-800/50'
+        return 'text-yellow-400 bg-gray-900/30 border-green-800/50'
     }
   }
 
@@ -169,10 +169,10 @@ function AlertPanel({ className = "" }) {
 
   if (loading) {
     return (
-      <div className={`bg-slate-800 rounded-lg p-4 ${className}`}>
+      <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
         <div className="flex items-center space-x-2">
-          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent border-r-transparent border-b-transparent border-l-transparent"></div>
-          <span className="text-sm text-slate-500">Loading alerts...</span>
+          <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent border-r-transparent border-b-transparent border-l-transparent"></div>
+          <span className="text-sm text-gray-500">Loading alerts...</span>
         </div>
       </div>
     )
@@ -180,7 +180,7 @@ function AlertPanel({ className = "" }) {
 
   if (error) {
     return (
-      <div className={`bg-slate-800 rounded-lg p-4 ${className}`}>
+      <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
         <div className="flex items-center space-x-2">
           <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -192,19 +192,19 @@ function AlertPanel({ className = "" }) {
   }
 
   return (
-    <div className={`bg-slate-800 rounded-lg p-4 ${className}`}>
+    <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Alerts</h3>
+        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Alerts</h3>
         <div className="flex items-center space-x-2">
           {unreadCount > 0 && (
-            <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
+            <span className="bg-red-600 text-[var(--text-primary)] text-xs px-2 py-1 rounded-full">
               {unreadCount} unread
             </span>
           )}
           <button
             onClick={handleMarkAllAsRead}
-            className="text-xs text-blue-400 hover:text-blue-300"
+            className="text-xs text-yellow-400 hover:text-yellow-300"
           >
             Mark All as Read
           </button>
@@ -214,7 +214,7 @@ function AlertPanel({ className = "" }) {
       {/* Alert List */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {alerts.length === 0 ? (
-          <div className="text-center text-slate-500 py-8">
+          <div className="text-center text-gray-500 py-8">
             <svg className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -233,10 +233,10 @@ function AlertPanel({ className = "" }) {
                 <div className="flex items-center space-x-2">
                   {getSeverityIcon(alert.severity)}
                   <div>
-                    <div className="text-sm font-medium text-white capitalize">
+                    <div className="text-sm font-medium text-[var(--text-primary)] capitalize">
                       {alert.severity}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-gray-400">
                       {alert.device_name}
                     </div>
                   </div>
@@ -245,7 +245,7 @@ function AlertPanel({ className = "" }) {
                   {!alert.is_read && (
                     <button
                       onClick={() => handleMarkAsRead(alert.id)}
-                      className="text-xs text-blue-400 hover:text-blue-300"
+                      className="text-xs text-yellow-400 hover:text-yellow-300"
                     >
                       Mark as Read
                     </button>
@@ -266,12 +266,12 @@ function AlertPanel({ className = "" }) {
               </div>
 
               {/* Alert Message */}
-              <div className="text-sm text-white mb-2">
+              <div className="text-sm text-[var(--text-primary)] mb-2">
                 {alert.message}
               </div>
 
               {/* Alert Metadata */}
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-xs text-gray-400">
                 <div>
                   {formatTime(alert.created_at)}
                 </div>
@@ -292,3 +292,5 @@ function AlertPanel({ className = "" }) {
 }
 
 export default AlertPanel
+
+

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
+import ClimaScopeLogo from './ClimaScopeLogo'
 
 export default function FloatingChatbot({ selectedDevice }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function FloatingChatbot({ selectedDevice }) {
 
     } catch (err) {
       const fallback = err?.message?.trim() || 'AI temporarily unavailable. Please try again.'
-      setMessages(p => [...p, { role: 'assistant', content: `⚠️ ${fallback}` }])
+      setMessages(p => [...p, { role: 'assistant', content: `WARNING ${fallback}` }])
     } finally {
       setLoading(false)
     }
@@ -67,15 +68,16 @@ export default function FloatingChatbot({ selectedDevice }) {
       {/* Expanding chat window */}
       <div 
         className={`glass-card flex flex-col transition-all duration-300 origin-bottom-right mb-4 overflow-hidden shadow-2xl ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-0 pointer-events-none'}`}
-        style={{ width: 340, height: 450, background: 'rgba(15, 25, 40, 0.95)', border: '1px solid rgba(255,255,255,0.1)' }}
+        style={{ width: 340, height: 450, background: 'rgba(30, 35, 20, 0.92)', border: '1px solid rgba(138,128,96,0.2)' }}
       >
         {/* Header */}
-        <div className="flex bg-gradient-to-r from-teal-500/20 to-blue-500/20 px-4 py-3 items-center justify-between border-b border-white/5">
+           <div className="flex px-4 py-3 items-center justify-between border-b border-white/5"
+             style={{ background: 'linear-gradient(135deg, rgba(200,168,64,0.12), rgba(200,168,64,0.05)), rgba(30, 35, 20, 0.65)' }}>
           <div className="flex items-center gap-2">
-            <span className="text-xl">🤖</span>
-            <div className="font-semibold text-white text-sm">ClimaScope AI</div>
+            <ClimaScopeLogo size={20} showWordmark={false} />
+            <div className="font-semibold text-[var(--text-primary)] text-sm">ClimaScope AI</div>
           </div>
-          <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition-colors">✕</button>
+          <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-[var(--text-primary)] transition-colors">x</button>
         </div>
 
         {/* Message List */}
@@ -83,7 +85,8 @@ export default function FloatingChatbot({ selectedDevice }) {
           {messages.map((m, idx) => (
             <div key={idx} className={`flex max-w-[85%] ${m.role === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'}`}>
               <div 
-                className={`text-sm px-3 py-2 rounded-2xl ${m.role === 'user' ? 'bg-blue-500/80 text-white rounded-tr-sm shadow-blue-500/20 shadow-lg' : 'bg-white/10 text-gray-100 rounded-tl-sm shadow-black/20 shadow-lg'} leading-relaxed whitespace-pre-wrap break-words inline-block`}
+                className={`text-sm px-3 py-2 rounded-2xl ${m.role === 'user' ? 'text-[var(--text-primary)] rounded-tr-sm shadow-lg' : 'bg-white/10 text-gray-100 rounded-tl-sm shadow-black/20 shadow-lg'} leading-relaxed whitespace-pre-wrap break-words inline-block`}
+                style={m.role === 'user' ? { background: 'linear-gradient(135deg, rgba(200,168,64,0.9), rgba(240,208,64,0.7))', boxShadow: '0 0 20px rgba(200,168,64,0.22)' } : {}}
               >
                 {m.content}
               </div>
@@ -109,13 +112,13 @@ export default function FloatingChatbot({ selectedDevice }) {
             onChange={(e) => setInputStr(e.target.value)}
             disabled={loading}
             placeholder="Ask about your climate data..." 
-            className="w-full bg-white/5 text-white text-sm rounded-xl px-4 py-2.5 pr-10 outline-none focus:bg-white/10 transition-colors"
+            className="w-full bg-white/5 text-[var(--text-primary)] text-sm rounded-xl px-4 py-2.5 pr-10 outline-none focus:bg-white/10 transition-colors"
           />
           <button 
             type="submit" 
             disabled={loading || !inputStr.trim()} 
-            className="absolute right-5 flex items-center justify-center p-1.5 text-teal-400 hover:text-white disabled:opacity-40 transition-colors"
-            style={{ top: '50%', transform: 'translateY(-50%)' }}
+            className="absolute right-5 flex items-center justify-center p-1.5 hover:text-[var(--text-primary)] disabled:opacity-40 transition-colors"
+            style={{ top: '50%', transform: 'translateY(-50%)', color: '#b8860b' }}
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <line x1="22" y1="2" x2="11" y2="13" />
@@ -129,10 +132,14 @@ export default function FloatingChatbot({ selectedDevice }) {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={`absolute bottom-0 right-0 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 z-50 border border-white/10 ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
-        style={{ background: 'linear-gradient(135deg, #14b8a6, #3b82f6)' }}
+        style={{ background: 'linear-gradient(135deg, #b8860b, #9a6f08)', boxShadow: '0 0 30px rgba(200,168,64,0.25)' }}
       >
-        <span className="text-2xl drop-shadow-md">✨</span>
+        <ClimaScopeLogo size={24} showWordmark={false} />
       </button>
     </div>
   )
 }
+
+
+
+

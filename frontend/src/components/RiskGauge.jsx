@@ -1,15 +1,15 @@
 /**
- * ClimaScope – Circular Risk Gauge Component
- * SVG-based gauge that renders a 0–100 arc coloured by risk level.
+ * ClimaScope - Circular Risk Gauge Component
+ * SVG-based gauge that renders a 0-100 arc coloured by risk level.
  */
 
 import React from 'react'
 
 // Risk level thresholds (must match edge processing engine)
 const LEVELS = {
-  SAFE:     { label: 'SAFE',     color: '#22c55e', bg: 'bg-safe/20',     border: 'border-safe/40',     text: 'text-safe'     },
-  MODERATE: { label: 'MODERATE', color: '#f59e0b', bg: 'bg-moderate/20', border: 'border-moderate/40', text: 'text-moderate' },
-  HIGH:     { label: 'HIGH',     color: '#ef4444', bg: 'bg-high/20',      border: 'border-high/40',     text: 'text-high',    pulse: true },
+  SAFE:     { label: 'SAFE',     color: '#4a8040', bg: 'bg-safe/20',     border: 'border-safe/40',     text: 'text-safe'     },
+  MODERATE: { label: 'MODERATE', color: '#b8860b', bg: 'bg-moderate/20', border: 'border-moderate/40', text: 'text-moderate' },
+  HIGH:     { label: 'HIGH',     color: '#a04030', bg: 'bg-high/20',      border: 'border-high/40',     text: 'text-high',    pulse: true },
 }
 
 function getLevel(score) {
@@ -20,7 +20,7 @@ function getLevel(score) {
 
 /**
  * Compute the SVG arc path for a given percentage fill on a circular track.
- * cx, cy – centre; r – radius; pct – 0–100
+ * cx, cy - centre; r - radius; pct - 0-100
  */
 function describeArc(cx, cy, r, pct) {
   const startAngle = -220   // degrees from positive x-axis (clockwise)
@@ -48,7 +48,7 @@ export default function RiskGauge({ score, riskLevel, anomalyFlag, riskReason })
 
   return (
     <div className={`rounded-xl border p-5 flex flex-col items-center ${displayLevel.bg} ${displayLevel.border}`}>
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
         Risk Score
       </h3>
 
@@ -100,7 +100,7 @@ export default function RiskGauge({ score, riskLevel, anomalyFlag, riskReason })
             x="80"
             y="98"
             textAnchor="middle"
-            fill="#94a3b8"
+            fill="#8a8060"
             fontSize="9"
             letterSpacing="2"
           >
@@ -121,16 +121,20 @@ export default function RiskGauge({ score, riskLevel, anomalyFlag, riskReason })
         />
         {displayLevel.label}
         {anomalyFlag && (
-          <span className="ml-1 text-xs font-normal text-yellow-400">⚠ ANOMALY</span>
+          <span className="ml-1 text-xs font-normal text-yellow-400">WARNING ANOMALY</span>
         )}
       </div>
 
       {/* Reason */}
       {riskReason && (
-        <p className="mt-3 text-center text-xs text-slate-400 leading-relaxed px-2 max-w-xs">
+        <p className="mt-3 text-center text-xs text-gray-400 leading-relaxed px-2 max-w-xs">
           {riskReason.split(';')[0]}
         </p>
       )}
     </div>
   )
 }
+
+
+
+

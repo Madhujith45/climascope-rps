@@ -57,10 +57,29 @@ export const signup = async (userData) => {
 
 export const login = async (credentials) => {
   try {
-    const response = await api.post('/auth/login', credentials)
+    const identifier =
+      credentials?.identifier ||
+      credentials?.email ||
+      credentials?.phone ||
+      ''
+    const response = await api.post('/auth/login', {
+      identifier,
+      password: credentials?.password || ''
+    })
     return response.data
   } catch (error) {
     throw new Error(error.response?.data?.detail || 'Login failed')
+  }
+}
+
+export const googleLogin = async (googleIdToken) => {
+  try {
+    const response = await api.post('/auth/google-login', {
+      id_token: googleIdToken,
+    })
+    return response.data
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || 'Google login failed')
   }
 }
 
@@ -121,3 +140,4 @@ export const isAuthenticated = () => {
 export const getAuthToken = () => {
   return localStorage.getItem('token')
 }
+

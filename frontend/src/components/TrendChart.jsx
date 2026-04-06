@@ -1,5 +1,5 @@
 /**
- * ClimaScope – Trend Chart with Prediction Line
+ * ClimaScope - Trend Chart with Prediction Line
  * Solid line = real data, dashed line = 30-min forecast
  */
 import React, { useMemo } from 'react'
@@ -14,33 +14,44 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 function fmt(ts) {
   try {
     const d = new Date(ts)
-    return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
-  } catch { return ts }
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+  } catch {
+    return ts
+  }
 }
 
 function generateForecast(sorted) {
   if (sorted.length < 6) return { labels: [], values: [] }
-  const recent = sorted.slice(-10).map(r => Number(r.temperature)).filter(v => !isNaN(v))
+
+  const recent = sorted.slice(-10).map((r) => Number(r.temperature)).filter((v) => !isNaN(v))
   if (recent.length < 2) return { labels: [], values: [] }
-  // Simple linear regression for naive forecast
+
   const n = recent.length
   const xMean = (n - 1) / 2
   const yMean = recent.reduce((a, b) => a + b, 0) / n
-  let num = 0, den = 0
-  for (let i = 0; i < n; i++) { num += (i - xMean) * (recent[i] - yMean); den += (i - xMean) ** 2 }
+
+  let num = 0
+  let den = 0
+  for (let i = 0; i < n; i++) {
+    num += (i - xMean) * (recent[i] - yMean)
+    den += (i - xMean) ** 2
+  }
+
   const slope = den ? num / den : 0
   const intercept = yMean - slope * xMean
 
   const lastVal = recent[recent.length - 1]
   const lastTime = new Date(sorted[sorted.length - 1]?.timestamp || Date.now())
-  const labels = []
-  const values = [lastVal] // start from last real point for a connected look
-  labels.push(fmt(lastTime))
-  for (let i = 1; i <= 6; i++) { // 6 x 5min = 30 min
+
+  const labels = [fmt(lastTime)]
+  const values = [lastVal]
+
+  for (let i = 1; i <= 6; i++) {
     const t = new Date(lastTime.getTime() + i * 5 * 60000)
     labels.push(fmt(t))
     values.push(parseFloat((intercept + slope * (n - 1 + i)).toFixed(2)))
   }
+
   return { labels, values }
 }
 
@@ -49,15 +60,15 @@ export default function TrendChart({ data, loading }) {
   const forecast = useMemo(() => generateForecast(sorted), [sorted])
 
   const chartData = useMemo(() => {
-    const realLabels = sorted.map(r => fmt(r.timestamp))
-    const realValues = sorted.map(r => r.temperature ?? null)
-    const allLabels = [...realLabels, ...forecast.labels.slice(1)] // skip first (duplicate)
-    
+    const realLabels = sorted.map((r) => fmt(r.timestamp))
+    const realValues = sorted.map((r) => r.temperature ?? null)
+    const allLabels = [...realLabels, ...forecast.labels.slice(1)]
+
     const fLen = Math.max(0, forecast.labels.length - 1)
     const rLen = Math.max(0, realValues.length - 1)
-    
-    const realData  = [...realValues, ...Array(fLen).fill(null)]
-    const predData  = realValues.length > 0
+
+    const realData = [...realValues, ...Array(fLen).fill(null)]
+    const predData = realValues.length > 0
       ? [...Array(rLen).fill(null), realValues[realValues.length - 1], ...forecast.values.slice(1)]
       : []
 
@@ -67,15 +78,18 @@ export default function TrendChart({ data, loading }) {
         {
           label: 'Temperature (°C)',
           data: realData,
-          borderColor: '#14b8a6',
+          borderColor: '#9a6f08',
           backgroundColor: (ctx) => {
-            const c = ctx.chart.ctx; const g = c.createLinearGradient(0, 0, 0, 260)
-            g.addColorStop(0, 'rgba(20,184,166,0.18)'); g.addColorStop(1, 'rgba(20,184,166,0.0)'); return g
+            const c = ctx.chart.ctx
+            const g = c.createLinearGradient(0, 0, 0, 260)
+            g.addColorStop(0, 'rgba(240, 208, 64, 0.15)')
+            g.addColorStop(1, 'rgba(240, 208, 64, 0)')
+            return g
           },
           borderWidth: 2.5,
           pointRadius: 0,
           pointHoverRadius: 6,
-          pointHoverBackgroundColor: '#14b8a6',
+          pointHoverBackgroundColor: '#9a6f08',
           pointHoverBorderColor: '#fff',
           pointHoverBorderWidth: 2,
           tension: 0.42,
@@ -85,12 +99,12 @@ export default function TrendChart({ data, loading }) {
         {
           label: 'Forecast',
           data: predData,
-          borderColor: '#14b8a6',
+          borderColor: '#b8860b',
           borderDash: [6, 4],
           borderWidth: 2,
           pointRadius: 0,
           pointHoverRadius: 5,
-          pointHoverBackgroundColor: '#2dd4bf',
+          pointHoverBackgroundColor: '#b8860b',
           tension: 0.3,
           fill: false,
           spanGaps: false,
@@ -107,38 +121,47 @@ export default function TrendChart({ data, loading }) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(13,21,32,0.95)',
-        titleColor: '#94a3b8', bodyColor: '#2dd4bf',
-        borderColor: 'rgba(20,184,166,0.3)', borderWidth: 1,
-        padding: 12, cornerRadius: 10,
-        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '—'} °C` },
+        backgroundColor: 'rgba(30, 35, 20, 0.95)',
+        titleColor: '#8a8060',
+        bodyColor: '#e8e0c8',
+        borderColor: 'rgba(200,168,64,0.4)',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
+        callbacks: {
+          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '-'} °C`,
+        },
       },
     },
     scales: {
-      x: { ticks: { color: '#4b6282', maxTicksLimit: 12, font: { size: 11, family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false } },
-      y: { ticks: { color: '#4b6282', font: { size: 11, family: 'Inter' }, callback: v => `${v}°` }, grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false } },
+      x: {
+        ticks: { color: '#8a8060', maxTicksLimit: 12, font: { size: 11, family: 'Inter' } },
+        grid: { color: 'rgba(138,128,96,0.12)', drawBorder: false },
+      },
+      y: {
+        ticks: { color: '#8a8060', font: { size: 11, family: 'Inter' }, callback: (v) => `${v}` },
+        grid: { color: 'rgba(138,128,96,0.10)', drawBorder: false },
+      },
     },
   }), [])
 
   return (
-    <div className="glass-card p-6 h-full">
-      <div className="flex items-center justify-between mb-5">
+    <div className="glass-card p-5 h-full">
+      <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="text-sm font-semibold text-white">Temperature Trend</h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Last {sorted.length} readings + 30-min forecast
-          </p>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Temperature Trend</h3>
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Last 24 hours</div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block w-4 h-0.5 rounded-full" style={{ background: '#14b8a6' }} />
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Live</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block w-4 h-0.5 rounded-full" style={{ background: '#14b8a6', borderTop: '1px dashed #14b8a6', opacity: 0.6 }} />
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Forecast</span>
-          </div>
-        </div>
+        <span
+          className="text-xs px-3 py-1 rounded-full"
+          style={{
+            background: 'rgba(200, 168, 64, 0.12)',
+            border: '1px solid rgba(200,168,64,0.4)',
+            color: '#9a6f08',
+          }}
+        >
+          Today
+        </span>
       </div>
 
       {loading || !data || data.length === 0 ? (
@@ -151,3 +174,7 @@ export default function TrendChart({ data, loading }) {
     </div>
   )
 }
+
+
+
+

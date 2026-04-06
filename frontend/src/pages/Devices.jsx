@@ -49,9 +49,9 @@ export default function Devices() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {devices.map(device => (
-            <div key={device.device_id} className="glass-card p-6 border-l-4 border-l-blue-500 hover:-translate-y-1 transition-transform">
+            <div key={device.device_id} className="glass-card p-6 border-l-4 border-l-yellow-500 hover:-translate-y-1 transition-transform">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-bold font-mono text-blue-400">
+                <h3 className="text-lg font-bold font-mono text-yellow-400">
                   {device.device_id.toUpperCase()}
                 </h3>
                 <span className={`px-2 py-1 text-xs rounded-full ${device.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -62,7 +62,7 @@ export default function Devices() {
               <div className="space-y-2 text-sm text-gray-300">
                 <div className="flex justify-between">
                   <span>Sensors:</span>
-                  <span className="font-mono text-emerald-400">BMP, DHT, MQ</span>
+                  <span className="font-mono text-green-400">BMP, DHT, MQ</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Location:</span>
@@ -80,3 +80,4 @@ export default function Devices() {
     </div>
   );
 }
+

@@ -17,6 +17,8 @@ import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+const REFRESH_MS = 10_000;
+
 export default function Analytics() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,15 +32,20 @@ export default function Analytics() {
         });
         if (!res.ok) throw new Error('Failed to fetch historical data');
         const data = await res.json();
-        // Data usually returned as newest first, so reverse for chart (oldest to newest left to right)
-        setHistory((data.records || []).reverse());
+        // Enforce timeline order so charts render left->right oldest to newest.
+        const records = Array.isArray(data.records) ? data.records : [];
+        records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        setHistory(records);
       } catch (err) {
         toast.error('Error loading deep analytics');
       } finally {
         setLoading(false);
       }
     };
+
     fetchHistory();
+    const id = setInterval(fetchHistory, REFRESH_MS);
+    return () => clearInterval(id);
   }, []);
 
   const chartOptions = {
@@ -46,23 +53,36 @@ export default function Analytics() {
     maintainAspectRatio: false,
     elements: { point: { radius: 0 } },
     scales: {
-      x: { grid: { display: false, color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+      x: {
+        grid: { display: false, color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: 'rgba(255,255,255,0.5)', autoSkip: true, maxTicksLimit: 10 }
+      },
       y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } }
     },
     plugins: {
-      legend: { labels: { color: 'rgba(255,255,255,0.7)' } }
+      legend: { labels: { color: 'rgba(255,255,255,0.7)' } },
+      tooltip: {
+        callbacks: {
+          title: (items) => {
+            if (!items?.length) return ''
+            const idx = items[0].dataIndex
+            const ts = history[idx]?.timestamp
+            return ts ? new Date(ts).toLocaleString() : ''
+          }
+        }
+      }
     }
   };
 
-  const labels = history.map(d => new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+  const labels = history.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   
   const envData = {
     labels,
     datasets: [
       {
-        label: 'Temperature (°C)',
+        label: 'Temperature (ï¿½C)',
         data: history.map(d => d.temperature),
-        borderColor: '#2dd4bf',
+        borderColor: '#4a8040',
         backgroundColor: 'rgba(45, 212, 191, 0.1)',
         tension: 0.4,
         fill: true,
@@ -70,7 +90,7 @@ export default function Analytics() {
       {
         label: 'Humidity (%)',
         data: history.map(d => d.humidity),
-        borderColor: '#3b82f6',
+        borderColor: '#4a8040',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
         fill: true,
@@ -87,7 +107,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="absolute inset-0 p-6 md:px-8 pb-10 overflow-y-auto page-in">
+    <div className="p-6 md:px-8 pb-10 page-in">
       <PageHeader title="Deep Analytics" subtitle="Advanced historical data and trends over time." />
 
       {loading ? (
@@ -95,19 +115,30 @@ export default function Analytics() {
       ) : history.length === 0 ? (
         <div className="glass-card p-10 flex flex-col items-center justify-center text-center h-96">
           <div className="text-4xl mb-4">??</div>
-          <h3 className="text-lg font-semibold text-white mb-2">No Data Available Yet</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No Data Available Yet</h3>
           <p className="text-sm text-gray-400 max-w-sm">Connect a device to start recording analytics over time.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="glass-card p-6" style={{ height: '400px' }}>
-            <h3 className="text-sm font-semibold text-white mb-4">Multivariate Timeline (Last 100 entries)</h3>
-            <Line data={envData} options={chartOptions} />
+          <div
+            className="glass-card p-6"
+            style={{ background: 'rgba(22, 26, 18, 0.84)', borderColor: 'rgba(184,134,11,0.32)' }}
+          >
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Multivariate Timeline (Last 100 entries)</h3>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Timeline is rendered from MongoDB logged timestamps (live Pi ingestion history).
+            </p>
+            <div style={{ height: '360px' }}>
+              <Line data={envData} options={chartOptions} />
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-card p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Risk Variance</h3>
+            <div
+              className="glass-card p-6"
+              style={{ background: 'rgba(22, 26, 18, 0.84)', borderColor: 'rgba(184,134,11,0.32)' }}
+            >
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Risk Variance</h3>
               <div style={{ height: '240px' }}>
                 <Line 
                   options={chartOptions} 
@@ -116,7 +147,7 @@ export default function Analytics() {
                     datasets: [{
                       label: 'Risk Score (0-100)',
                       data: history.map(d => d.risk_score),
-                      borderColor: '#ef4444',
+                      borderColor: '#a04030',
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
                       tension: 0.4,
                       fill: true,
@@ -125,8 +156,11 @@ export default function Analytics() {
                 />
               </div>
             </div>
-            <div className="glass-card p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Atmospheric Pressure</h3>
+            <div
+              className="glass-card p-6"
+              style={{ background: 'rgba(22, 26, 18, 0.84)', borderColor: 'rgba(184,134,11,0.32)' }}
+            >
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Atmospheric Pressure</h3>
               <div style={{ height: '240px' }}>
                 <Line 
                   options={chartOptions} 
@@ -135,7 +169,7 @@ export default function Analytics() {
                     datasets: [{
                       label: 'Pressure (hPa)',
                       data: history.map(d => d.pressure),
-                      borderColor: '#8b5cf6',
+                      borderColor: '#b8860b',
                       tension: 0.4
                     }]
                   }} 
@@ -148,3 +182,7 @@ export default function Analytics() {
     </div>
   );
 }
+
+
+
+
