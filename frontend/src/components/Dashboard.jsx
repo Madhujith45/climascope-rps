@@ -22,6 +22,7 @@ import RiskGauge       from './RiskGauge'
 
 const REFRESH_MS   = 10_000
 const CHART_POINTS = 60
+const BASE_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || ''
 
 function parseReadingTimestamp(reading) {
   if (!reading) return null
@@ -59,8 +60,8 @@ export default function Dashboard() {
     if (!token) return
 
     const url = selectedDevice
-      ? `/api/data/latest?n=${CHART_POINTS}&device_id=${selectedDevice}`
-      : `/api/data/latest?n=${CHART_POINTS}`
+      ? `${BASE_URL}/api/data/latest?n=${CHART_POINTS}&device_id=${selectedDevice}`
+      : `${BASE_URL}/api/data/latest?n=${CHART_POINTS}`
 
     try {
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
