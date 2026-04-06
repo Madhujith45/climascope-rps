@@ -23,10 +23,12 @@ def read_sensors():
 
 def main():
     engine = RiskEngine(window_size=10)
-    backend_url = os.getenv("CLIMASCOPE_BACKEND_URL", "https://climascope-rps.onrender.com/api/data")
+    backend_url = os.getenv("CLIMASCOPE_BACKEND_URL", "https://climascope-rps.onrender.com")
+    api_endpoint = f"{backend_url}/api/data"
 
     logger.info(f"Using backend: {backend_url}")
-    print(f"Starting ClimaScope Edge. Sending data to {backend_url} every 3s")
+    logger.info(f"Sending telemetry to: {api_endpoint}")
+    print(f"Starting ClimaScope Edge. Sending data to {api_endpoint} every 3s")
 
     while True:
         try:
@@ -46,7 +48,8 @@ def main():
             
             # 4. POST to Backend
             try:
-                response = requests.post(backend_url, json=payload, timeout=2)
+                logger.info(f"POST {api_endpoint}")
+                response = requests.post(api_endpoint, json=payload, timeout=5)
                 if response.status_code == 200:
                     print("  -> Success")
                 else:
