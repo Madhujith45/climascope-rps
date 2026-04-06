@@ -21,7 +21,6 @@ logging.basicConfig(
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import init_db
 from .routes.data_routes import router as dr
 from .routes.alert_routes import router as ar
 from .routes.prediction_routes import router as pr
@@ -64,16 +63,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Startup: create DB tables if they don't exist
+# Startup: initialize MongoDB connection and indexes
 @app.on_event("startup")
 async def on_startup():
-    await init_db()  # SQLite
     try:
         await init_mongo_db()  # MongoDB
         logger.info("MongoDB initialized successfully")
     except Exception as e:
         logger.error(f"MongoDB initialization skipped or failed: {e}")
-    
+
     logger.info("ClimaScope backend ready – CORS origins: %s", ALLOWED_ORIGINS)
     logger.info("Multi-user AI platform initialized")
 
