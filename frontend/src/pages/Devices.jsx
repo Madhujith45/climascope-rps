@@ -24,27 +24,28 @@ export default function Devices() {
 
   const fetchDevices = async () => {
     try {
-      const token = getAuthToken();
-      let res = await fetch(`${BASE_URL}/api/devices/list`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) {
-        res = await fetch(`${BASE_URL}/devices/list`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+      // Use public endpoint - no authentication required
+      // Backend computes online/offline status based on last_seen timestamp
+      const res = await fetch(`${BASE_URL}/api/devices/all`);
+      
       if (res.ok) {
         const data = await res.json();
-        // Handle both single device response and array response
-        const deviceList = Array.isArray(data) ? data : (data.devices ? data.devices : [data]);
+        // Extract devices from DeviceListResponse { devices: [...], total: N }
+        const deviceList = data.devices || [];
         setDevices(deviceList.filter(d => d)); // Filter out nulls
-      } else if (res.status === 404) {
-        // No device created yet - show empty state
+      } else if (res.status === 404 || res.status === 400) {
+        // No devices created yet - show empty state
+        setDevices([]);
+      } else {
+        // Other error - log but still show empty state
+        console.error(`Failed to fetch devices: ${res.status}`);
         setDevices([]);
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load edge hardware.');
+      // Don't show toast error for network errors - just silently show empty state
+      // This allows the page to function even if backend is temporarily unavailable
+      setDevices([]);
     } finally {
       setLoading(false);
     }

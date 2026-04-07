@@ -405,3 +405,57 @@ async def get_user_device(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get device"
         )
+
+
+@router.get("/all", response_model=DeviceListResponse)
+async def get_all_devices():
+    """
+    Get all registered devices with their online/offline status.
+    PUBLIC endpoint - no authentication required.
+    Used by frontend to display all connected edge devices.
+    
+    Returns:
+        DeviceListResponse: List of all devices with computed status
+    """
+    try:
+        db = get_mongo_db()
+        devices = await db.devices.find({}).to_list(None)
+        
+        now = datetime.utcnow()
+        device_list = []
+        
+        for device in devices:
+            # Calculate status based on last_seen timestamp
+            last_seen = device.get("last_seen")
+            device_status = "offline"
+            
+            if last_seen:
+                age_seconds = (now - last_seen).total_seconds()
+                if age_seconds <= 45:  # Online if data within last 45 seconds
+                    device_status = "online"
+                elif age_seconds <= 300:  # Slow if data within 5 minutes
+                    device_status = "slow"
+            
+            device_list.append({
+                "id": str(device["_id"]),
+                "device_id": device.get("device_id", "unknown"),
+                "device_name": device.get("device_name", device.get("device_id", "unknown")),
+                "location": device.get("location"),
+                "description": device.get("description"),
+                "created_at": device["created_at"],
+                "last_seen": last_seen,
+                "is_active": device.get("is_active", True),
+                "status": device_status
+            })
+        
+        return {
+            "devices": device_list,
+            "total": len(device_list)
+        }
+    
+    except Exception as e:
+        logger.error(f"Get all devices error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve devices"
+        )
