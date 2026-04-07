@@ -6,6 +6,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { login, googleLogin } from '../services/auth'
 import ClimaScopeLogo from '../components/ClimaScopeLogo'
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '906868526107-uibbhqhhssf687lafkh9dr6bj6fn1rim.apps.googleusercontent.com'
+
 export default function Login() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ identifier: '', password: '' })
@@ -30,7 +32,7 @@ export default function Login() {
   }
 
   React.useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    const clientId = GOOGLE_CLIENT_ID
     if (!clientId) {
       setGoogleReady(false)
       return
@@ -189,7 +191,7 @@ export default function Login() {
           </div>
           {!googleReady && (
             <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              Set VITE_GOOGLE_CLIENT_ID in frontend .env to enable Google sign-in.
+              Google sign-in requires the frontend build to have a valid Google Client ID.
             </p>
           )}
         </form>
