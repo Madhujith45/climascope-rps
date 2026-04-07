@@ -26,12 +26,11 @@ export default function FloatingChatbot({ selectedDevice }) {
 
     try {
       const token = getAuthToken()
+      const activeDeviceId = selectedDevice || 'climascope-pi001'
       // Fetch current context data first
       let contextData = {}
       try {
-        const url = selectedDevice 
-          ? `${BASE_URL}/api/data/latest?n=1&device_id=${selectedDevice}` 
-          : `${BASE_URL}/api/data/latest?n=1`
+        const url = `${BASE_URL}/api/data/latest?n=1&device_id=${encodeURIComponent(activeDeviceId)}`
         const d_res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
         if (d_res.ok) {
           const arr = await d_res.json()

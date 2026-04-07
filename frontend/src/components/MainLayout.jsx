@@ -28,7 +28,7 @@ export default function MainLayout() {
 
         {/* ── Main Area ──────────────────────────────────────────── */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative px-4 md:px-6 pt-4">
-          <Topbar user={user} secondsAgo={null} onLogout={handleLogout} />
+          <Topbar user={user} selectedDevice={selectedDevice} secondsAgo={null} onLogout={handleLogout} />
 
           {/* ── Scrollable Content ─────────────────────────────────── */}
           <main className="flex-1 overflow-y-auto page-in relative" style={{ padding: '18px 4px 42px' }}>

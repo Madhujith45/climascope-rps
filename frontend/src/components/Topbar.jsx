@@ -7,7 +7,7 @@ import { getAuthToken } from '../services/auth'
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-export default function Topbar({ user, secondsAgo, onLogout }) {
+export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLive, setIsLive] = useState(false)
   const [statusText, setStatusText] = useState('Offline')
@@ -29,8 +29,6 @@ export default function Topbar({ user, secondsAgo, onLogout }) {
   }, [menuRef])
 
   useEffect(() => {
-    const getTs = (row) => row?.timestamp || row?.created_at || row?.ts || row?.time
-
     const checkLive = async () => {
       try {
         const token = getAuthToken()
@@ -40,26 +38,38 @@ export default function Topbar({ user, secondsAgo, onLogout }) {
           return
         }
 
-        const res = await fetch(`${BASE_URL}/api/data/latest?n=1`, {
+        let res = await fetch(`${BASE_URL}/api/devices/list`, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        if (!res.ok) throw new Error('latest fetch failed')
+        if (!res.ok) {
+          res = await fetch(`${BASE_URL}/devices/list`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        }
+        if (!res.ok) throw new Error('device status fetch failed')
 
         const payload = await res.json()
-        const latest = Array.isArray(payload) ? payload[0] : payload
-        const rawTs = getTs(latest)
-        const parsed = rawTs ? new Date(rawTs) : null
-        const ageMs = parsed && !Number.isNaN(parsed.getTime())
-          ? Date.now() - parsed.getTime()
-          : Number.POSITIVE_INFINITY
+        const devices = payload?.devices || []
+        const activeDeviceId = selectedDevice || 'climascope-pi001'
+        const target = devices.find((d) => d.device_id === activeDeviceId) || devices[0]
 
-        const live = Number.isFinite(ageMs) && ageMs <= 60_000
+        if (!target) {
+          setIsLive(false)
+          setStatusText('Offline')
+          return
+        }
+
+        const lastSeen = target?.last_seen ? new Date(target.last_seen) : null
+        const ageMs = lastSeen && !Number.isNaN(lastSeen.getTime())
+          ? Date.now() - lastSeen.getTime()
+          : Number.POSITIVE_INFINITY
+        const live = (target?.status === 'online') || (Number.isFinite(ageMs) && ageMs <= 60_000)
         setIsLive(live)
 
         if (!live) {
           setStatusText('Offline')
         } else {
-          const ageSec = Math.max(0, Math.floor(ageMs / 1000))
+          const ageSec = Number.isFinite(ageMs) ? Math.max(0, Math.floor(ageMs / 1000)) : 0
           setStatusText(ageSec <= 5 ? 'Live' : `${ageSec}s ago`)
         }
       } catch {
@@ -71,7 +81,7 @@ export default function Topbar({ user, secondsAgo, onLogout }) {
     checkLive()
     const id = setInterval(checkLive, 10_000)
     return () => clearInterval(id)
-  }, [])
+  }, [selectedDevice])
 
   return (
     <header

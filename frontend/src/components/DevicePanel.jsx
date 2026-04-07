@@ -102,29 +102,6 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
         const d = await res.json()
         const list = d.devices || []
 
-        // Fallback: if no registered device exists yet, infer one from latest telemetry.
-        if (list.length === 0) {
-          const latestRes = await fetch(`${BASE_URL}/api/data/latest?n=1`, { headers: { Authorization: `Bearer ${token}` } })
-          if (latestRes.ok) {
-            const latest = await latestRes.json()
-            const latestDoc = Array.isArray(latest) ? latest[0] : latest
-            if (latestDoc) {
-              const inferredDeviceId = latestDoc.device_id || 'climascope-pi001'
-              setDevices([
-                {
-                  id: inferredDeviceId,
-                  device_id: inferredDeviceId,
-                  device_name: inferredDeviceId,
-                  location: 'Auto-detected',
-                  is_active: true,
-                  last_seen: latestDoc.timestamp || null,
-                },
-              ])
-              return
-            }
-          }
-        }
-
         setDevices(list)
       } catch { /* ignore */ }
       finally { setLoading(false) }

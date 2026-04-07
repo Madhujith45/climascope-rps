@@ -49,10 +49,11 @@ api.interceptors.response.use(
  * Fetch the N most recent sensor readings (default 10).
  * Returns an array sorted newest-first.
  * @param {number} n – number of records to return (1–100)
+ * @param {string} deviceId – device_id to scope latest readings
  * @returns {Promise<object[]>}
  */
-export async function fetchLatest(n = 10) {
-  const { data } = await api.get('/api/data/latest', { params: { n } })
+export async function fetchLatest(n = 10, deviceId = 'climascope-pi001') {
+  const { data } = await api.get('/api/data/latest', { params: { n, device_id: deviceId } })
   return Array.isArray(data) ? data : []
 }
 
