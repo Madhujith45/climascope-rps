@@ -151,8 +151,7 @@ export default function Dashboard() {
     const latestTs = parseReadingTimestamp(latestReading)
     const latestDeviceId = normalizeDeviceLabel(latestReading?.device_id || activeDeviceId || null)
     const dataAgeMs = latestTs ? Date.now() - latestTs.getTime() : Number.POSITIVE_INFINITY
-    const fetchAgeMs = lastUpdated ? Date.now() - lastUpdated : Number.POSITIVE_INFINITY
-    const isFresh = (Number.isFinite(dataAgeMs) && dataAgeMs <= 60_000) || (Number.isFinite(fetchAgeMs) && fetchAgeMs <= 60_000)
+    const isFresh = Number.isFinite(dataAgeMs) && dataAgeMs <= 60_000 && latestReading
     const hasDevice = Boolean(latestDeviceId)
 
     if (hasDevice && isFresh) {
@@ -176,7 +175,7 @@ export default function Dashboard() {
       label: 'No device connected',
       helper: 'Connect Pi (climascope) to get real-time data',
     }
-  }, [latestReading, chartData, lastUpdated, activeDeviceId])
+  }, [latestReading, chartData, activeDeviceId])
 
   const status = displayPrediction?.status || 'normal'
   const contextTint =
