@@ -42,38 +42,37 @@ export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
     const checkLive = async () => {
       try {
         const token = getAuthToken()
+        const activeDeviceId = selectedDevice || 'climascope-pi001'
         if (!token) {
           setIsLive(false)
           setStatusText('Offline')
           return
         }
 
-        let res = await fetch(`${BASE_URL}/api/devices/list`, {
+        const res = await fetch(
+          `${BASE_URL}/api/data/latest?n=1&device_id=${encodeURIComponent(activeDeviceId)}`,
+          {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) {
-          res = await fetch(`${BASE_URL}/devices/list`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        }
-        if (!res.ok) throw new Error('device status fetch failed')
+          }
+        )
+        if (!res.ok) throw new Error('latest telemetry fetch failed')
 
         const payload = await res.json()
-        const devices = payload?.devices || []
-        const activeDeviceId = selectedDevice || 'climascope-pi001'
-        const target = devices.find((d) => d.device_id === activeDeviceId) || devices[0]
+        const latest = Array.isArray(payload) ? payload[0] : payload
 
-        if (!target) {
+        if (!latest) {
           setIsLive(false)
           setStatusText('Offline')
           return
         }
 
-        const lastSeen = parseServerTime(target?.last_seen)
+        const lastSeen = parseServerTime(
+          latest?.timestamp || latest?.created_at || latest?.ts || latest?.time
+        )
         const ageMs = lastSeen
           ? Date.now() - lastSeen.getTime()
           : Number.POSITIVE_INFINITY
-        const live = (target?.status === 'online') || (Number.isFinite(ageMs) && ageMs <= 60_000)
+        const live = Number.isFinite(ageMs) && ageMs <= 60_000
         setIsLive(live)
 
         if (!live) {
@@ -155,8 +154,9 @@ export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
         </div>
 
         {/* Bell */}
-        <button
-          className="flex items-center justify-center rounded-xl transition-colors hidden sm:flex"
+        <Link
+          to="/alerts"
+          className="flex items-center justify-center rounded-xl transition-colors"
           style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
           title="Notifications (active alerts)"
         >
@@ -164,7 +164,7 @@ export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-        </button>
+        </Link>
 
         {/* Avatar / Dropdown menu */}
         <div className="relative" ref={menuRef}>

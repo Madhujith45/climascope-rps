@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || ''
+
 function AlertPanel({ className = "" }) {
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +22,7 @@ function AlertPanel({ className = "" }) {
           throw new Error('No authentication token found')
         }
 
-        const response = await fetch('/alerts/', {
+        const response = await fetch(`${BASE_URL}/alerts/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -47,7 +49,7 @@ function AlertPanel({ className = "" }) {
   const handleMarkAsRead = async (alertId) => {
     try {
       const token = getAuthToken()
-      const response = await fetch(`/alerts/${alertId}/read`, {
+      const response = await fetch(`${BASE_URL}/alerts/${alertId}/read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,7 +72,7 @@ function AlertPanel({ className = "" }) {
   const handleResolveAlert = async (alertId) => {
     try {
       const token = getAuthToken()
-      const response = await fetch(`/alerts/${alertId}/resolve`, {
+      const response = await fetch(`${BASE_URL}/alerts/${alertId}/resolve`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -92,7 +94,7 @@ function AlertPanel({ className = "" }) {
   const handleDeleteAlert = async (alertId) => {
     try {
       const token = getAuthToken()
-      const response = await fetch(`/alerts/${alertId}`, {
+      const response = await fetch(`${BASE_URL}/alerts/${alertId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,7 +114,7 @@ function AlertPanel({ className = "" }) {
   const handleMarkAllAsRead = async () => {
     try {
       const token = getAuthToken()
-      const response = await fetch('/alerts/mark-all-read', {
+      const response = await fetch(`${BASE_URL}/alerts/mark-all-read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

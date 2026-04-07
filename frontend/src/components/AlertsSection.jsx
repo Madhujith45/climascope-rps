@@ -4,6 +4,8 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../services/auth'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || ''
+
 const MAX_VISIBLE_ALERTS = 5
 
 const SEV = {
@@ -32,7 +34,7 @@ export default function AlertsSection() {
     const load = async () => {
       try {
         const token = getAuthToken()
-        const res = await fetch('/alerts/?limit=100', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch(`${BASE_URL}/alerts/?limit=100`, { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) throw new Error()
         const d = await res.json()
         setAlerts(d.alerts || [])
@@ -86,7 +88,7 @@ export default function AlertsSection() {
   const handleRead = async (ids) => {
     const token = getAuthToken()
     await Promise.all(ids.map((id) =>
-      fetch(`/alerts/${id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${BASE_URL}/alerts/${id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
     ))
     setAlerts(prev => prev.map(a => ids.includes(a.id) ? { ...a, is_read: true } : a))
   }
@@ -94,14 +96,14 @@ export default function AlertsSection() {
   const handleResolve = async (ids) => {
     const token = getAuthToken()
     await Promise.all(ids.map((id) =>
-      fetch(`/alerts/${id}/resolve`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${BASE_URL}/alerts/${id}/resolve`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
     ))
     setAlerts(prev => prev.map(a => ids.includes(a.id) ? { ...a, is_resolved: true } : a))
   }
 
   const handleMarkAll = async () => {
     const token = getAuthToken()
-    await fetch('/alerts/mark-all-read', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+    await fetch(`${BASE_URL}/alerts/mark-all-read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
     setAlerts(prev => prev.map(a => ({ ...a, is_read: true })))
   }
 

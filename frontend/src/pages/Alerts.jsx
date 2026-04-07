@@ -3,6 +3,8 @@ import { PageHeader } from '../components/PageHeader'
 import { getAuthToken } from '../services/auth'
 import toast from 'react-hot-toast'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || ''
+
 export default function Alerts() {
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -11,7 +13,7 @@ export default function Alerts() {
     const fetchAlerts = async () => {
       try {
         const token = getAuthToken()
-        const res = await fetch('/alerts/?limit=20', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch(`${BASE_URL}/alerts/?limit=20`, { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) throw new Error('Failed to fetch alerts')
         const data = await res.json()
         setAlerts(data.alerts || [])

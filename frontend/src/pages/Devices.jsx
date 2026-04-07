@@ -25,9 +25,14 @@ export default function Devices() {
   const fetchDevices = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch(`${BASE_URL}/api/devices`, {
+      let res = await fetch(`${BASE_URL}/api/devices/list`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (!res.ok) {
+        res = await fetch(`${BASE_URL}/devices/list`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
       if (res.ok) {
         const data = await res.json();
         // Handle both single device response and array response
