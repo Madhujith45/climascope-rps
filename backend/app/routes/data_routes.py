@@ -23,6 +23,22 @@ def to_iso_z(value):
         else:
             value = value.astimezone(timezone.utc)
         return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    if isinstance(value, str):
+        # Normalize legacy ISO-like strings that may be missing timezone suffix.
+        try:
+            parsed = value
+            if parsed.endswith("Z"):
+                parsed = parsed[:-1] + "+00:00"
+            dt = datetime.fromisoformat(parsed)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        except ValueError:
+            if value.endswith("Z"):
+                return value
+            return f"{value}Z"
     return value
 
 class SensorData(BaseModel):
