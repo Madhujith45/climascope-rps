@@ -47,6 +47,7 @@ function getProcessedReading(reading) {
 
 export default function Dashboard() {
   const { selectedDevice, user } = useOutletContext()
+  const activeDeviceId = selectedDevice || 'climascope-pi001'
   const [latestReading,  setLatestReading]  = useState(null)
   const [chartData,      setChartData]      = useState([])
   const [prediction,     setPrediction]     = useState(null)
@@ -59,14 +60,14 @@ export default function Dashboard() {
     const token = getAuthToken()
     if (!token) return
 
-    const url = selectedDevice
-      ? `${BASE_URL}/api/data/latest?n=${CHART_POINTS}&device_id=${selectedDevice}`
-      : `${BASE_URL}/api/data/latest?n=${CHART_POINTS}`
+    const url = `${BASE_URL}/api/data/latest?n=${CHART_POINTS}&device_id=${encodeURIComponent(activeDeviceId)}`
 
     try {
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error('Failed to fetch sensor data')
       const data = await res.json()
+      console.log('LATEST DEVICE ID:', activeDeviceId)
+      console.log('LATEST DATA:', data)
       const arr  = Array.isArray(data) ? data : [data]
       setChartData(arr)
       setLatestReading(arr[0] ?? null)
@@ -78,7 +79,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }, [selectedDevice, error])
+  }, [activeDeviceId, error])
 
   // ── fetch AI prediction ───────────────────────────────────────────
   const fetchPrediction = useCallback(async (reading) => {
@@ -144,7 +145,7 @@ export default function Dashboard() {
     const latestTs = parseReadingTimestamp(latestReading)
     const latestDeviceId = normalizeDeviceLabel(latestReading?.device_id || null)
     const dataAgeMs = latestTs ? Date.now() - latestTs.getTime() : Number.POSITIVE_INFINITY
-    const isFresh = Number.isFinite(dataAgeMs) && dataAgeMs <= 45_000
+    const isFresh = Number.isFinite(dataAgeMs) && dataAgeMs <= 60_000
     const hasDevice = Boolean(latestDeviceId)
 
     if (hasDevice && isFresh) {

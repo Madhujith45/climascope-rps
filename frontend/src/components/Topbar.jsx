@@ -53,7 +53,7 @@ export default function Topbar({ user, secondsAgo, onLogout }) {
           ? Date.now() - parsed.getTime()
           : Number.POSITIVE_INFINITY
 
-        const live = Number.isFinite(ageMs) && ageMs <= 45_000
+        const live = Number.isFinite(ageMs) && ageMs <= 60_000
         setIsLive(live)
 
         if (!live) {

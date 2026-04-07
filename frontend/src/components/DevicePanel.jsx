@@ -10,7 +10,7 @@ function isDeviceOnline(device) {
   if (device?.last_seen) {
     const lastSeen = new Date(device.last_seen).getTime()
     if (Number.isFinite(lastSeen)) {
-      return Date.now() - lastSeen <= 45_000
+      return Date.now() - lastSeen <= 60_000
     }
   }
   return device?.is_active !== false

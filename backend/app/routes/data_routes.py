@@ -96,6 +96,7 @@ async def ensure_device_for_user(db, user_id: str | None, device_id: str):
 @router.post("")
 async def post_data(data: SensorData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_optional_user)):
     db = get_mongo_db()
+    current_time = datetime.datetime.utcnow()
     level = (data.level or data.risk_level or data.risk_local or "").upper()
     anomaly_detected = bool(data.anomaly or data.anomaly_flag)
     score = float(data.risk_score or 0)
@@ -129,11 +130,12 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
 
     raw_data = data.dict()
     raw_data.pop("api_key", None)
+    raw_data["timestamp"] = current_time
 
     document = {
         "device_id": raw_data.get("device_id") or device_id_to_use or "unknown_device",
         "user_id": owner_user_id,
-        "timestamp": datetime.datetime.utcnow(),
+        "timestamp": current_time,
         "raw": {
             "temperature": raw_data.get("temperature"),
             "humidity": raw_data.get("humidity"),
@@ -150,6 +152,27 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
     }
 
     await db.sensor_readings.insert_one(document)
+
+    # Keep device heartbeat authoritative for online/offline UI.
+    await db.devices.update_one(
+        {"device_id": document["device_id"]},
+        {
+            "$set": {
+                "last_seen": current_time,
+                "status": "online",
+                "updated_at": current_time,
+            },
+            "$setOnInsert": {
+                "user_id": owner_user_id,
+                "device_name": document["device_id"],
+                "location": "Default",
+                "description": "Auto-created from telemetry heartbeat",
+                "is_active": True,
+                "created_at": current_time,
+            },
+        },
+        upsert=True,
+    )
 
     if score > 65 or anomaly_detected or level == "HIGH":
         reason = []
@@ -175,14 +198,34 @@ async def post_data(data: SensorData, background_tasks: BackgroundTasks, current
     return {"status": "success", "message": "Data processed", "device_id": device_id_to_use}
 
 @router.get("/latest")
-async def get_latest(n: int = 1):
+async def get_latest(n: int = 1, device_id: str | None = None):
     db = get_mongo_db()
-    cursor = db.sensor_readings.find({}, sort=[("timestamp", -1)]).limit(n)
+    query = {}
+    if device_id:
+        query["device_id"] = device_id
+    cursor = db.sensor_readings.find(query, sort=[("timestamp", -1), ("_id", -1)]).limit(n)
     docs = await cursor.to_list(length=n)
     for doc in docs:
         doc["_id"] = str(doc["_id"])
-        raw = doc.get("raw", {})
-        processed = doc.get("processed", {})
+        raw = doc.get("raw") or {}
+        processed = doc.get("processed") or {}
+        if not raw:
+            raw = {
+                "temperature": doc.get("temperature"),
+                "humidity": doc.get("humidity"),
+                "pressure": doc.get("pressure"),
+                "gas": doc.get("gas"),
+            }
+            doc["raw"] = raw
+        if not processed:
+            processed = {
+                "gas_ppm": doc.get("gas_ppm", raw.get("gas")),
+                "risk_score": doc.get("risk_score"),
+                "level": doc.get("level") or doc.get("risk_level") or doc.get("risk_local"),
+                "anomaly": bool(doc.get("anomaly") or doc.get("anomaly_flag")),
+                "prediction": doc.get("prediction"),
+            }
+            doc["processed"] = processed
         gas_value = raw.get("gas", doc.get("gas", 0))
         doc["gas_ppm"] = processed.get("gas_ppm", doc.get("gas_ppm", gas_value if gas_value else 0))
         doc["mq2_voltage"] = (gas_value / 100.0) if gas_value else doc.get("mq2_voltage", 0)
