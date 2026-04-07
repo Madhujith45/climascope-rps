@@ -26,8 +26,14 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || ''
 
 function parseReadingTimestamp(reading) {
   if (!reading) return null
-  const raw = reading.timestamp || reading.created_at || reading.ts || reading.time
+  let raw = reading.timestamp || reading.created_at || reading.ts || reading.time
   if (!raw) return null
+
+  // Support BSON-style payloads like { "$date": "..." }.
+  if (typeof raw === 'object' && raw !== null && '$date' in raw) {
+    raw = raw.$date
+  }
+
   const date = new Date(raw)
   return Number.isNaN(date.getTime()) ? null : date
 }
@@ -143,9 +149,10 @@ export default function Dashboard() {
 
   const connectionInfo = useMemo(() => {
     const latestTs = parseReadingTimestamp(latestReading)
-    const latestDeviceId = normalizeDeviceLabel(latestReading?.device_id || null)
+    const latestDeviceId = normalizeDeviceLabel(latestReading?.device_id || activeDeviceId || null)
     const dataAgeMs = latestTs ? Date.now() - latestTs.getTime() : Number.POSITIVE_INFINITY
-    const isFresh = Number.isFinite(dataAgeMs) && dataAgeMs <= 60_000
+    const fetchAgeMs = lastUpdated ? Date.now() - lastUpdated : Number.POSITIVE_INFINITY
+    const isFresh = (Number.isFinite(dataAgeMs) && dataAgeMs <= 60_000) || (Number.isFinite(fetchAgeMs) && fetchAgeMs <= 60_000)
     const hasDevice = Boolean(latestDeviceId)
 
     if (hasDevice && isFresh) {
@@ -169,7 +176,7 @@ export default function Dashboard() {
       label: 'No device connected',
       helper: 'Connect Pi (climascope) to get real-time data',
     }
-  }, [latestReading, chartData])
+  }, [latestReading, chartData, lastUpdated, activeDeviceId])
 
   const status = displayPrediction?.status || 'normal'
   const contextTint =

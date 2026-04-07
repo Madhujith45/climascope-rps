@@ -7,6 +7,16 @@ import { getAuthToken } from '../services/auth'
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+function parseServerTime(value) {
+  if (!value) return null
+  let raw = value
+  if (typeof raw === 'object' && raw !== null && '$date' in raw) {
+    raw = raw.$date
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLive, setIsLive] = useState(false)
@@ -59,8 +69,8 @@ export default function Topbar({ user, selectedDevice, secondsAgo, onLogout }) {
           return
         }
 
-        const lastSeen = target?.last_seen ? new Date(target.last_seen) : null
-        const ageMs = lastSeen && !Number.isNaN(lastSeen.getTime())
+        const lastSeen = parseServerTime(target?.last_seen)
+        const ageMs = lastSeen
           ? Date.now() - lastSeen.getTime()
           : Number.POSITIVE_INFINITY
         const live = (target?.status === 'online') || (Number.isFinite(ageMs) && ageMs <= 60_000)

@@ -6,12 +6,20 @@ import { getAuthToken } from '../services/auth'
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+function parseServerTime(value) {
+  if (!value) return null
+  let raw = value
+  if (typeof raw === 'object' && raw !== null && '$date' in raw) {
+    raw = raw.$date
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 function isDeviceOnline(device) {
-  if (device?.last_seen) {
-    const lastSeen = new Date(device.last_seen).getTime()
-    if (Number.isFinite(lastSeen)) {
-      return Date.now() - lastSeen <= 60_000
-    }
+  const parsedLastSeen = parseServerTime(device?.last_seen)
+  if (parsedLastSeen) {
+    return Date.now() - parsedLastSeen.getTime() <= 60_000
   }
   return device?.is_active !== false
 }
