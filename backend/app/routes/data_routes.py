@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, Field
@@ -13,6 +13,17 @@ from bson import ObjectId
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/data", tags=["data"])
 security = HTTPBearer(auto_error=False)
+
+
+def to_iso_z(value):
+    """Convert datetime values to ISO 8601 UTC with trailing Z."""
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        else:
+            value = value.astimezone(timezone.utc)
+        return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return value
 
 class SensorData(BaseModel):
     device_id: str | None = None
@@ -56,7 +67,7 @@ async def ensure_device_for_user(db, user_id: str | None, device_id: str):
     Auto-create or update a single device record for the current telemetry source.
     Returns device_id of the device.
     """
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     device_filter = {"device_id": device_id, "user_id": user_id}
     existing_device = await db.devices.find_one(device_filter)
@@ -96,7 +107,7 @@ async def ensure_device_for_user(db, user_id: str | None, device_id: str):
 @router.post("")
 async def post_data(data: SensorData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_optional_user)):
     db = get_mongo_db()
-    current_time = datetime.datetime.utcnow()
+    current_time = datetime.now(timezone.utc)
     level = (data.level or data.risk_level or data.risk_local or "").upper()
     anomaly_detected = bool(data.anomaly or data.anomaly_flag)
     score = float(data.risk_score or 0)
@@ -207,6 +218,7 @@ async def get_latest(n: int = 1, device_id: str | None = None):
     docs = await cursor.to_list(length=n)
     for doc in docs:
         doc["_id"] = str(doc["_id"])
+        doc["timestamp"] = to_iso_z(doc.get("timestamp"))
         raw = doc.get("raw") or {}
         processed = doc.get("processed") or {}
         if not raw:
@@ -242,6 +254,7 @@ async def get_history(limit: int = 50, offset: int = 0, device_id: str | None = 
     docs = await cursor.to_list(length=limit)
     for doc in docs:
         doc["_id"] = str(doc["_id"])
+        doc["timestamp"] = to_iso_z(doc.get("timestamp"))
         raw = doc.get("raw", {})
         processed = doc.get("processed", {})
         gas_value = raw.get("gas", doc.get("gas", 0))
