@@ -80,8 +80,8 @@ async def on_shutdown():
     await close_mongo_db()
 
 
-@app.get("/health", tags=["health"])
-async def health():
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["health"])
+def health():
     return {"status": "ok"}
 
 # ── Routers ───────────────────────────────────────────────────────────
