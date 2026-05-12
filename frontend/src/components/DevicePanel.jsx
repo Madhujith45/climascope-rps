@@ -178,7 +178,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
       <div className="flex-1 space-y-2 overflow-y-auto">
         {loading ? (
           [1,2,3].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)
-        ) : devices.length === 0 ? (
+        ) : devices.filter(d => getDeviceStatus(d) !== 'offline').length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-8"
                style={{ color: 'var(--text-muted)' }}>
             <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="mb-3 opacity-40">
@@ -188,7 +188,9 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
             <p className="text-sm">No devices registered</p>
           </div>
         ) : (
-          devices.map(d => (
+          devices
+            .filter(d => getDeviceStatus(d) !== 'offline')
+            .map(d => (
             <DeviceCard
               key={d.id || d.device_id}
               device={d}
