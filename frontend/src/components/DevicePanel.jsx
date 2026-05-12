@@ -16,16 +16,28 @@ function parseServerTime(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function isDeviceOnline(device) {
+function getDeviceStatus(device) {
+  const status = (device?.status || '').toLowerCase()
+  if (status === 'online' || status === 'slow' || status === 'offline') {
+    return status
+  }
+
   const parsedLastSeen = parseServerTime(device?.last_seen)
   if (parsedLastSeen) {
-    return Date.now() - parsedLastSeen.getTime() <= 60_000
+    const ageMs = Date.now() - parsedLastSeen.getTime()
+    if (ageMs <= 60_000) return 'online'
+    if (ageMs <= 300_000) return 'slow'
+    return 'offline'
   }
-  return device?.is_active !== false
+
+  return device?.is_active !== false ? 'online' : 'offline'
 }
 
 function DeviceCard({ device, isSelected, onSelect }) {
-  const online = isDeviceOnline(device)
+  const status = getDeviceStatus(device)
+  const online = status !== 'offline'
+  const statusLabel = status === 'slow' ? 'Slow' : (online ? 'Online' : 'Offline')
+  const statusColor = status === 'slow' ? '#b8860b' : (online ? '#4a8040' : '#a04030')
   return (
     <button
       onClick={() => onSelect(isSelected ? '' : device.device_id)}
@@ -48,7 +60,7 @@ function DeviceCard({ device, isSelected, onSelect }) {
               width: 34, height: 34,
               background: online ? 'rgba(34,197,94,0.1)' : 'rgba(160,64,48,0.12)',
               border: `1px solid ${online ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.15)'}`,
-              color: online ? '#4a8040' : '#a04030',
+              color: statusColor,
             }}
           >
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,12 +86,12 @@ function DeviceCard({ device, isSelected, onSelect }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{
-                background: online ? '#4a8040' : '#a04030',
-                boxShadow: online ? '0 0 6px #4a8040' : 'none',
+                background: statusColor,
+                boxShadow: online ? `0 0 6px ${statusColor}` : 'none',
               }}
             />
-            <span className="text-xs font-medium" style={{ color: online ? '#4a8040' : '#a04030' }}>
-              {online ? 'Online' : 'Offline'}
+            <span className="text-xs font-medium" style={{ color: statusColor }}>
+              {statusLabel}
             </span>
           </div>
           {device.last_seen && (
@@ -151,7 +163,7 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
         <div>
           <div className="text-sm font-semibold text-[var(--text-primary)]">Connected Devices</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {devices.filter(d => isDeviceOnline(d)).length} online
+            {devices.filter(d => getDeviceStatus(d) !== 'offline').length} online
           </div>
         </div>
       </div>
