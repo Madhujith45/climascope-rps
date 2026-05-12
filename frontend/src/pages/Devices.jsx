@@ -5,6 +5,50 @@ import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+function parseServerTime(value) {
+  if (!value) return null;
+  let raw = value;
+  if (typeof raw === 'object' && raw !== null && '$date' in raw) {
+    raw = raw.$date;
+  }
+  if (typeof raw === 'string') {
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(raw);
+    if (!hasTimezone) {
+      raw = `${raw}Z`;
+    }
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatRelativeTime(value) {
+  if (!value) return null;
+  const diffMs = Date.now() - value.getTime();
+  if (!Number.isFinite(diffMs) || diffMs < 0) return null;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} hr ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} d ago`;
+}
+
+function getDeviceStatus(device) {
+  const status = (device?.status || '').toLowerCase();
+  if (status === 'online' || status === 'slow' || status === 'offline') {
+    return status;
+  }
+  const lastSeen = parseServerTime(device?.last_seen);
+  if (lastSeen) {
+    const ageMs = Date.now() - lastSeen.getTime();
+    if (ageMs <= 60000) return 'online';
+    if (ageMs <= 300000) return 'slow';
+    return 'offline';
+  }
+  return device?.is_active !== false ? 'online' : 'offline';
+}
+
 export default function Devices() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,15 +68,24 @@ export default function Devices() {
 
   const fetchDevices = async () => {
     try {
-      // Use public endpoint - no authentication required
-      // Backend computes online/offline status based on last_seen timestamp
-      const res = await fetch(`${BASE_URL}/api/devices/all`);
-      
+      // Try public endpoint first (no auth required).
+      // If it is protected, fall back to the authenticated list endpoint.
+      let res = await fetch(`${BASE_URL}/api/devices/all`);
+
+      if (!res.ok && res.status === 401) {
+        const token = getAuthToken();
+        if (token) {
+          res = await fetch(`${BASE_URL}/api/devices/list`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+      }
+
       if (res.ok) {
         const data = await res.json();
         // Extract devices from DeviceListResponse { devices: [...], total: N }
         const deviceList = data.devices || [];
-        setDevices(deviceList.filter(d => d)); // Filter out nulls
+        setDevices(deviceList.filter(d => d));
       } else if (res.status === 404 || res.status === 400) {
         // No devices created yet - show empty state
         setDevices([]);
@@ -111,7 +164,16 @@ export default function Devices() {
                 {device.last_seen && (
                   <div className="flex justify-between">
                     <span>Last Seen:</span>
-                    <span className="font-mono text-xs">{new Date(device.last_seen).toLocaleTimeString()}</span>
+                    {(() => {
+                      const lastSeen = parseServerTime(device.last_seen);
+                      const status = getDeviceStatus(device);
+                      const label = status === 'offline'
+                        ? formatRelativeTime(lastSeen)
+                        : lastSeen?.toLocaleTimeString();
+                      return (
+                        <span className="font-mono text-xs">{label || '-'}</span>
+                      );
+                    })()}
                   </div>
                 )}
                 <div className="flex justify-between">

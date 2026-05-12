@@ -39,12 +39,28 @@ function getDeviceStatus(device) {
   return device?.is_active !== false ? 'online' : 'offline'
 }
 
+function formatRelativeTime(value) {
+  if (!value) return null
+  const diffMs = Date.now() - value.getTime()
+  if (!Number.isFinite(diffMs) || diffMs < 0) return null
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin} min ago`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `${diffHours} hr ago`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays} d ago`
+}
+
 function DeviceCard({ device, isSelected, onSelect }) {
   const status = getDeviceStatus(device)
   const online = status !== 'offline'
   const statusLabel = status === 'slow' ? 'Slow' : (online ? 'Online' : 'Offline')
   const statusColor = status === 'slow' ? '#b8860b' : (online ? '#4a8040' : '#a04030')
   const lastSeen = parseServerTime(device?.last_seen)
+  const lastSeenLabel = status === 'offline'
+    ? formatRelativeTime(lastSeen)
+    : lastSeen?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   return (
     <button
       onClick={() => onSelect(isSelected ? '' : device.device_id)}
@@ -101,9 +117,9 @@ function DeviceCard({ device, isSelected, onSelect }) {
               {statusLabel}
             </span>
           </div>
-          {lastSeen && (
+          {lastSeenLabel && (
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {lastSeenLabel}
             </div>
           )}
         </div>
