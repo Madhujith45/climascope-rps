@@ -12,6 +12,12 @@ function parseServerTime(value) {
   if (typeof raw === 'object' && raw !== null && '$date' in raw) {
     raw = raw.$date
   }
+  if (typeof raw === 'string') {
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(raw)
+    if (!hasTimezone) {
+      raw = `${raw}Z`
+    }
+  }
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
@@ -38,6 +44,7 @@ function DeviceCard({ device, isSelected, onSelect }) {
   const online = status !== 'offline'
   const statusLabel = status === 'slow' ? 'Slow' : (online ? 'Online' : 'Offline')
   const statusColor = status === 'slow' ? '#b8860b' : (online ? '#4a8040' : '#a04030')
+  const lastSeen = parseServerTime(device?.last_seen)
   return (
     <button
       onClick={() => onSelect(isSelected ? '' : device.device_id)}
@@ -94,9 +101,9 @@ function DeviceCard({ device, isSelected, onSelect }) {
               {statusLabel}
             </span>
           </div>
-          {device.last_seen && (
+          {lastSeen && (
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {new Date(device.last_seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
           )}
         </div>
