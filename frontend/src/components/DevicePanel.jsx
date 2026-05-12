@@ -101,16 +101,31 @@ export default function DevicePanel({ selectedDevice, onDeviceChange }) {
     const load = async () => {
       try {
         const token = getAuthToken()
-        // Try new endpoint first (/api/devices), fallback to old endpoint
-        let res = await fetch(`${BASE_URL}/api/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
-        if (!res.ok) {
-          res = await fetch(`${BASE_URL}/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
-        }
-        if (!res.ok) return
-        const d = await res.json()
-        const list = d.devices || []
 
-        setDevices(list)
+        const fetchAllDevices = async () => {
+          const res = await fetch(`${BASE_URL}/api/devices/all`)
+          if (!res.ok) return null
+          const data = await res.json()
+          return data.devices || []
+        }
+
+        const fetchUserDevices = async () => {
+          if (!token) return null
+          let res = await fetch(`${BASE_URL}/api/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
+          if (!res.ok) {
+            res = await fetch(`${BASE_URL}/devices/list`, { headers: { Authorization: `Bearer ${token}` } })
+          }
+          if (!res.ok) return null
+          const data = await res.json()
+          return data.devices || []
+        }
+
+        let list = await fetchAllDevices()
+        if (!list || list.length === 0) {
+          list = await fetchUserDevices()
+        }
+
+        setDevices(list || [])
       } catch { /* ignore */ }
       finally { setLoading(false) }
     }
