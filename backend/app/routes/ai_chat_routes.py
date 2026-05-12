@@ -244,13 +244,15 @@ def _compose_prompt(
     context_text = "\n".join([f"- {k}: {v}" for k, v in (context or {}).items()]) or "- None"
 
     return f"""
-You are an environmental safety AI.
+You are ClimaScope's AI assistant for environmental monitoring.
 
 IMPORTANT RULES:
-- Prioritize CURRENT sensor data over old alerts
-- If values are normal -> system is SAFE
-- Alerts may be historical unless clearly active
-- Do NOT exaggerate danger
+- Prioritize CURRENT sensor data over old alerts.
+- Alerts may be historical unless clearly active.
+- Do NOT exaggerate danger.
+- If the user greets you or asks a general question, respond conversationally.
+- Only include a status block (SAFE / WARNING / CRITICAL) when the user asks about safety,
+  when values indicate risk, or when it helps clarify the answer.
 
 CURRENT SENSOR DATA:
 Temperature: {latest.get('temperature')}
@@ -279,12 +281,10 @@ DASHBOARD CONTEXT:
 USER QUESTION:
 {user_query}
 
-TASK:
-1. Determine current status (SAFE / WARNING / CRITICAL)
-2. Explain briefly
-3. Give only necessary actions (no panic unless critical)
-
-Keep response realistic and not overly alarming.
+RESPONSE GUIDELINES:
+- If safety-related, include a short status block and 1-3 actions.
+- If informational, answer directly and ask 1 clarifying question if needed.
+- Keep responses concise and practical.
 """
 
 
@@ -297,10 +297,10 @@ async def _get_runtime_context(current_user: dict, context: Dict[str, Any]):
     if device_id:
         latest_query["device_id"] = device_id
 
-    latest = await db.sensor_data.find_one(latest_query, sort=[("timestamp", -1)]) or {}
+    latest = await db.sensor_readings.find_one(latest_query, sort=[("timestamp", -1)]) or {}
 
     recent_readings: List[Dict[str, Any]] = []
-    recent_cursor = db.sensor_data.find(latest_query).sort("_id", -1).limit(5)
+    recent_cursor = db.sensor_readings.find(latest_query).sort("_id", -1).limit(5)
     async for row in recent_cursor:
         recent_readings.append(row)
 
